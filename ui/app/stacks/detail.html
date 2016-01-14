@@ -1,0 +1,79 @@
+<bb-header title="'Stack Tint'"></bb-header>
+
+<bb-content>
+    <div class="container-fluid stack-detail">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Stack Information</h3>
+                    </div>
+                    <div class="panel-body">
+                        <p>
+                            This hex is currently configured to run <strong>{{ stack.name }}</strong>. It has been created
+                            by <strong>{{ stack.owner.displayName }}</strong> to provide you with {{ stack.description }}.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="panel panel-default" ng-if="stack.stack.actions">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Actions</h3>
+                    </div>
+                    <table ng-if="stack.actions" class="table">
+                        <thead>
+                        <tr>
+                            <th class="col-sm-1">label</th>
+                            <th>description</th>
+                            <th class="col-sm-1"></th>
+                        </tr>
+                        </thead>
+                        <tr ng-repeat="action in stack.stack.actions">
+                            <td>{{action.label}}</td>
+                            <td>{{action.description}}</td>
+                            <td>
+                                <a ng-click="invokeAction(action)" class="btn btn-xs btn-default">
+                                    <i class="fa fa-play-circle-o"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                    <div ng-if="!stack.stack.actions" class="panel-body">
+                        <p>There are no actions configured for this stack</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="panel panel-default" ng-if="stack.stack.views">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Views</h3>
+                    </div>
+                    <table ng-if="stack.stack.views" class="table">
+                        <thead>
+                        <tr>
+                            <th class="col-sm-1">label</th>
+                            <th>description</th>
+                            <th class="col-sm-1"></th>
+                        </tr>
+                        </thead>
+                        <tr ng-repeat="view in stack.stack.views">
+                            <td>{{view.label}}</td>
+                            <td>{{view.description}}</td>
+                            <td>
+                                <a href="{{view.url}}" target="_blank" class="btn btn-xs btn-default">
+                                    <i class="fa fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                    <div ng-if="!stack.stack.views" class="panel-body">
+                        <p>There are no views configured for this stack</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</bb-content>

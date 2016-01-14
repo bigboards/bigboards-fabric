@@ -1,0 +1,43 @@
+<bb-header title="tint.name"></bb-header>
+
+<bb-content>
+    <div class="row caption-block">
+        <div class="col-md-8 col-md-offset-2 caption-block-content">
+            <div class="caption-image-container">
+                <img ng-src="{{ tint.logo }}" alt="{{ tint.slug }}">
+            </div>
+            <div class="caption-details">
+                <h2>{{tint.name}}</h2>
+                <div class="subtitle-container">
+                    <span class="subtitle">{{ tint.owner.firstname }} {{ tint.owner.surname }}</span>
+                </div>
+                <div class="category-container">
+                    <span class="category">{{ tint.type }} tint</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row item-toolbar">
+        <div class="col-md-8 col-md-offset-2 item-toolbar-content">
+            <div>
+                <div class="item-action" ng-if="isInstalled != null && isInstalled" ng-click="install()" role="button">Re-install</div>
+                <div class="item-action" ng-if="isInstalled != null && isInstalled" ng-click="uninstall()" role="button">Uninstall</div>
+                <div class="item-action" ng-if="isInstalled != null && !isInstalled" ng-click="install()" role="button">Install</div>
+            </div>
+        </div>
+    </div>
+    <div class="row item-details">
+        <div class="col-md-8 col-md-offset-2 item-details-content">
+            <div class="section">
+                <div class="section-header">
+                    <h3 class="mb-15">Description</h3>
+                </div>
+                <div class="section-detail">
+                    <p class="mb-30">{{tint.description}}</p>
+                </div>
+            </div>
+
+            <div ng-include="tintDetails"></div>
+        </div>
+    </div>
+</bb-content>

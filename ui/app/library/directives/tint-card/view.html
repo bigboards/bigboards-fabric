@@ -1,0 +1,27 @@
+<div class="card" ng-class="additionalClasses">
+    <div class="card-content">
+        <div class="cover">
+            <div class="cover-image-container">
+                <div class="cover-outer-align">
+                    <div class="cover-inner-align">
+                        <img ng-src="{{ tint.logo }}" alt="{{ tint.slug }}">
+                    </div>
+                </div>
+            </div>
+            <a class="card-click-target" href="#/library/{{tint.type}}/{{tint.owner}}/{{tint.slug}}">
+                <span class="preview-overlay-container"></span>
+            </a>
+        </div>
+        <div class="details">
+            <h2>
+                <a class="title" href="#/library/{{tint.type}}/{{tint.owner}}/{{tint.slug}}">
+                    {{ tint.name }}
+                    <span class="paragraph-end"></span>
+                </a>
+            </h2>
+            <div class="subtitle-container">
+                <a class="subtitle" href="#/library/{{tint.type}}/{{tint.owner}}/{{tint.slug}}">{{ tint.owner_name }}</a>
+            </div>
+        </div>
+    </div>
+</div>

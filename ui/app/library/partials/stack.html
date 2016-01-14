@@ -1,0 +1,25 @@
+<div class="section">
+        <div class="section-header">
+            <h3 class="mb-15">Views</h3>
+        </div>
+    <div class="section-detail">
+        <table class="table">
+            <thead>
+            <tr>
+                <th class="col-sm-1">label</th>
+                <th>description</th>
+                <th ng-if="isInstalled != null && isInstalled" class="col-sm-1"></th>
+            </tr>
+            </thead>
+            <tr ng-repeat="view in tint.stack.views">
+                <td>{{view.label}}</td>
+                <td>{{view.description}}</td>
+                <td ng-if="isInstalled != null && isInstalled">
+                    <a href="{{ view.url }}" target="_blank" class="btn btn-xs btn-default">
+                        <i class="fa fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>

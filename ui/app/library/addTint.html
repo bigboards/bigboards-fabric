@@ -1,0 +1,27 @@
+<div class="modal-header">
+    <h3 class="modal-title">Add a Stack</h3>
+</div>
+<div class="modal-body">
+    <p>
+        Stacks can be added to the library through the use of git repositories. GitHub, BitBucket as well as plain git
+        repositories are supported. For plain git repositories make sure the repository can be accessed using the
+        <i>git archive</i> command.
+    </p>
+    <p>
+        Please enter the url to the vcs endpoint holding the tint you want to add.
+    </p>
+    <form class="form-horizontal">
+        <div class="form-group">
+            <label for="inputUrl" class="col-sm-2 control-label">Url</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="inputUrl" placeholder="Git URL" ng-model="model.url">
+            </div>
+        </div>
+    </form>
+
+    <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">{{alert.msg}}</alert>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" ng-click="ok()">OK</button>
+    <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+</div>

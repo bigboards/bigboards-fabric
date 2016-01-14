@@ -1,0 +1,21 @@
+---
+- hosts: host
+  sudo: yes
+  tasks:
+    - name: get the list of containers
+      shell: lxc-ls
+      register: lxc_list
+      tags:
+        - container
+
+    - name: be sure the containers are stopped
+      shell: lxc-stop -n {{ ansible_local.hex.name }}-v{{ ansible_local.hex.node.sequence }}
+      when: "'{{ ansible_local.hex.name }}-v{{ ansible_local.hex.node.sequence }}' in '''{{lxc_list.stdout}}'''"
+      tags:
+        - container
+
+    - name: be sure the containers are started again
+      shell: lxc-start -d -n {{ ansible_local.hex.name }}-v{{ ansible_local.hex.node.sequence }}
+      when: "'{{ ansible_local.hex.name }}-v{{ ansible_local.hex.node.sequence }}' in '''{{lxc_list.stdout}}'''"
+      tags:
+        - container

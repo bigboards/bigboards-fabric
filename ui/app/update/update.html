@@ -1,0 +1,28 @@
+<bb-header>Update</bb-header>
+
+<div class="update">
+    <!--<h3>Patches</h3>-->
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="col-sm-1">name</th>
+                <th>installed on</th>
+                <th class="col-sm-1">
+                    <a ng-click="update()" class="btn btn-xs btn-default" title="Update hex">
+                        <i class="fa fa-refresh"></i>
+                    </a>
+
+                </th>
+            </tr>
+        </thead>
+        <tr ng-repeat="patch in patches">
+            <td>{{patch.name}}</td>
+            <td>{{patch.installedOn}}</td>
+            <td>
+                <a ng-if="!patch.installedOn && ($index == 0 || patches[$index - 1].installedOn)" ng-click="installPatch(patch.name)" class="btn btn-xs btn-default" title="Install patch">
+                    <i class="fa fa-cloud-download"></i>
+                </a>
+            </td>
+        </tr>
+    </table>
+</div>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+    <meta charset="UTF-8" />
+
+    <!-- Always force latest IE rendering engine or request Chrome Frame -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title ng-bind="title + ' &mdash; Hex'">Hex</title>
+
+    <meta name="description" content="The management console of your BigBoards Hex" />
+    <meta name="keywords" content="BigBoards, Hex, management console" />
+    <meta name="author" content="BigBoards" />
+
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" type="text/css" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="bower_components/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="bower_components/angularjs-toaster/toaster.css">
+
+    <link rel="stylesheet" type="text/css" href="app/dashboard/dashboard.css" />
+    <link rel="stylesheet" type="text/css" href="app/dashboard/directives/hex-detail/hex-detail.css" />
+    <link rel="stylesheet" type="text/css" href="app/dashboard/directives/indicator/indicator.css" />
+
+    <link rel="stylesheet" type="text/css" href="app/common/directives/menu/menu.css" />
+    <link rel="stylesheet" type="text/css" href="app/common/directives/tasks/tasks.css" />
+
+    <link rel="stylesheet" type="text/css" href="app/library/library.css" />
+    <link rel="stylesheet" type="text/css" href="app/library/directives/tint-card/style.css" />
+
+    <link rel="stylesheet" type="text/css" href="app/tutorials/directives/tutorial-viewer/style.css" />
+    <link rel="stylesheet" type="text/css" href="app/tutorials/directives/console-viewer/style.css" />
+
+    <link rel="stylesheet" type="text/css" href="app/tasks/tasks.css" />
+    <link rel="stylesheet" type="text/css" href="app/tints/tints.css" />
+    <link rel="stylesheet" type="text/css" href="app/stacks/stack.css" />
+
+    <link rel="stylesheet" type="text/css" href="styles/fonts.css" />
+    <link rel="stylesheet" type="text/css" href="styles/app.css" />
+    <link rel="stylesheet" type="text/css" href="styles/mmc-page-layout.css" />
+
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+
+    <!--[if lt IE 9]>
+    <script type="text/javascript" src="bower_components/html5shiv/dist/html5shiv.js"></script>
+    <![endif]-->
+</head>
+
+<body ng-controller="ApplicationController">
+<div id="wrap">
+    <!--<snap-drawer>-->
+        <!--<div id="menu">-->
+            <!--<div class="menu-logo">-->
+                <!--<span class="bb-name"></span>-->
+            <!--</div>-->
+            <!--<div class="menu-item" ng-repeat="item in menu" ng-click="invokeMenuItem(item)">-->
+                <!--<span class="caption">{{item.label}}</span>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!--<div id="firmware-version">-->
+            <!--<span class="caption">firmware {{firmware.version.name}}</span>-->
+        <!--</div>-->
+    <!--</snap-drawer><snap-content>-->
+        <div id="menu-quick">
+            <div class="quick-menu-logo">
+                <span class="bb-logo" ></span>
+            </div>
+
+            <div class="quick-menu-item" ng-repeat="item in menu" ng-click="invokeMenuItem(item)" ng-class="{'active': item.label == currentItem.label}">
+                <div class="quick-menu-logo">
+                    <span class="fa fa-2x" ng-class="item.icon"></span>
+                </div>
+                <h3>{{item.label}}</h3>
+            </div>
+
+            <a class="quick-menu-item" href="mailto:support@bigboards.io" data-uv-trigger="contact">
+                <div class="quick-menu-logo">
+                    <span class="fa fa-2x fa-question"></span>
+                </div>
+                <h3>Help</h3>
+            </a>
+        </div>
+        <toaster-container></toaster-container>
+        <div id="content" ng-view></div>
+    <!--</snap-content>-->
+</div>
+
+<!--<tasks></tasks>-->
+
+<script src="https://togetherjs.com/togetherjs-min.js"></script>
+<script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
+<script type="text/javascript" src="bower_components/socket.io-client/socket.io.js"></script>
+
+<script type="text/javascript" src="bower_components/angular/angular.js"></script>
+<script type="text/javascript" src="bower_components/angular-animate/angular-animate.min.js"></script>
+<script type="text/javascript" src="bower_components/angular-bootstrap/ui-bootstrap.js"></script>
+<script type="text/javascript" src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+<script type="text/javascript" src="bower_components/angular-resource/angular-resource.js"></script>
+<script type="text/javascript" src="bower_components/angular-sanitize/angular-sanitize.min.js"></script>
+<script type="text/javascript" src="bower_components/showdown/compressed/Showdown.min.js"></script>
+<script type="text/javascript" src="bower_components/angular-markdown-directive/markdown.js"></script>
+<script type="text/javascript" src="bower_components/angular-route/angular-route.js"></script>
+<script type="text/javascript" src="bower_components/angular-socket-io/socket.js"></script>
+<script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
+<script type="text/javascript" src="bower_components/angular-webstorage/angular-webstorage.min.js"></script>
+<script type="text/javascript" src="bower_components/angularjs-toaster/toaster.js"></script>
+
+<script type="text/javascript" src="app/mmc.js"></script>
+
+<script type="text/javascript" src="app/common/controllers.js"></script>
+<script type="text/javascript" src="app/common/services.js"></script>
+<script type="text/javascript" src="app/common/filters.js"></script>
+
+<script type="text/javascript" src="app/common/directives/bb-header/bb-header.js"></script>
+<script type="text/javascript" src="app/common/directives/bb-content/bb-content.js"></script>
+<script type="text/javascript" src="app/common/directives/init-focus/init-focus.js"></script>
+<script type="text/javascript" src="app/common/directives/menu/menu.js"></script>
+<script type="text/javascript" src="app/common/directives/tasks/tasks.js"></script>
+<script type="text/javascript" src="app/common/directives/text-field/text-field.js"></script>
+<script type="text/javascript" src="app/common/directives/scroll-glue/scroll-glue.js"></script>
+
+<script type="text/javascript" src="app/main/controllers.js"></script>
+
+<script type="text/javascript" src="app/dashboard/module.js"></script>
+
+<script type="text/javascript" src="app/dashboard/directives/hex-detail/hex-detail.js"></script>
+<script type="text/javascript" src="app/dashboard/directives/indicator/indicator.js"></script>
+
+<script type="text/javascript" src="app/stacks/module.js"></script>
+
+<script type="text/javascript" src="app/tints/module.js"></script>
+<script type="text/javascript" src="app/tints/tints.js"></script>
+
+<script type="text/javascript" src="app/settings/module.js"></script>
+
+<script type="text/javascript" src="app/library/directives/tint-card/directive.js"></script>
+
+<script type="text/javascript" src="app/tasks/module.js"></script>
+
+<script type="text/javascript" src="app/tutorials/module.js"></script>
+<script type="text/javascript" src="app/tutorials/directives/tutorial-viewer/directive.js"></script>
+<script type="text/javascript" src="app/tutorials/directives/console-viewer/directive.js"></script>
+
+<script type="text/javascript" src="app/library/module.js"></script>
+
+<script type="text/javascript" src="app/update/module.js"></script>
+<script type="text/javascript" src="app/update/update.js"></script>
+
+<!-- UserVoice - JavaScript SDK (only needed once on a page) -->
+<script>(function(){var uv=document.createElement('script');uv.type='text/javascript';uv.async=true;uv.src='//widget.uservoice.com/yjwfLqF0V88QyIB4J1sJ2A.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(uv,s)})()</script>
+
+<!-- UserVoice - A tab to launch the Classic Widget -->
+<script>
+    UserVoice = window.UserVoice || [];
+</script>
+
+<script>
+    angular.element(document).ready(function() {
+        var api = '';
+        //var api = 'http://jack.hex.bigboards.io:7000';
+
+        $.getJSON(api + '/api/v1/settings/client', function(data) {
+            data.api = api;
+
+            sessionStorage.setItem('settings', JSON.stringify(data));
+
+            angular.bootstrap(document, ['mmc']);
+        });
+    });
+</script>
+
+</body>
+</html>

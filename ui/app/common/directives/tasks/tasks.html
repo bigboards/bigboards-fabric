@@ -1,0 +1,28 @@
+<script type="text/ng-template" id="output-play">
+    <h3>{{line.content}}</h3>
+</script>
+<script type="text/ng-template" id="output-task">
+    <h4>{{line.content}}</h4>
+</script>
+<script type="text/ng-template" id="output-node">
+    {{line.node}}: {{line.status}}
+</script>
+
+<div class="tasks" ng-show="visible">
+    <div class="header">
+        <div class="indicator">
+            <i class="fa" ng-class="iconClass()"></i>
+        </div>
+
+        <div class="title">
+            <h3> {{ message }} </h3>
+        </div>
+
+        <div class="actions" ng-if="state != 'running'">
+            <button class="btn btn-default" ng-click="hide()"><i class="fa fa-times"></i></button>
+        </div>
+    </div>
+    <div class="output" scroll-glue>
+        <pre>{{output}}</pre>
+    </div>
+</div>

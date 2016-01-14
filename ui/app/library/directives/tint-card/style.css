@@ -1,0 +1,116 @@
+.card {
+    position: relative;
+    width: 160px;
+    height: 215px;
+    display: inline-block;
+    margin: 5px;
+    text-align: left;
+    vertical-align: top;
+    white-space: normal;
+    -webkit-backface-visibility: hidden;
+}
+
+.card .card-content {
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+    -webkit-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: #fff;
+    height: 100%;
+    position: relative;
+    text-decoration: none;
+    vertical-align: top;
+}
+
+.card .cover {
+    height: 160px;
+    width: 160px;
+    overflow: hidden;
+    border-radius: 2px 2px 0 0;
+    position: relative;
+}
+
+.card .cover-image-container {
+    height: 110%;
+    left: -5%;
+    position: relative;
+    top: -5%;
+    width: 110%;
+}
+
+.card .cover-outer-align {
+    display: table;
+    height: 100%;
+    width: 100%;
+}
+
+.card .cover-inner-align {
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.card .card-content .cover img {
+    max-width: 73%;
+    max-height: 160px;
+    vertical-align: middle;
+}
+
+.card .card-content .details {
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    display: block;
+    overflow: hidden;
+    padding: 7px 10px 0;
+    position: relative;
+}
+
+.card.small .details {
+    max-height: 50px;
+}
+
+.card .card-content .details h2 {
+    font-size: medium;
+}
+
+.card .title {
+    color: #333;
+    display: block;
+    font-size: 16px;
+    line-height: 18px;
+    max-height: 36px;
+    min-height: 18px;
+    overflow: hidden;
+    text-decoration: none;
+    position: relative;
+    white-space: nowrap;
+}
+
+.card .title .paragraph-end {
+    height: 19px;
+    width: 45px;
+}
+
+.card .subtitle-container {
+    min-height: 22px;
+}
+
+.card .subtitle-container, .card .stars-container {
+    display: block;
+    position: relative;
+    width: 100%;
+}
+
+.card .subtitle {
+    color: #aaa;
+    display: inline-block;
+    font-size: 13px;
+    line-height: 16px;
+    margin: 1px 0;
+    max-width: 132px;
+    overflow: hidden;
+    white-space: nowrap;
+}

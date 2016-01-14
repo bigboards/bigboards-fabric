@@ -1,0 +1,24 @@
+<div class="tutorial-viewer-content" ng-include="viewUrl(currentView)">
+</div>
+<div class="tutorial-viewer-toolbar">
+    <div class="pull-left">
+        <button class="btn btn-default previous" ng-if="currentView == 'content' && hasPreviousPage()" ng-click="previousPage()">
+            <span class="fa fa-arrow-left"></span>
+            {{currentItem.previous.title}}
+        </button>
+    </div>
+    <div class="pull-right">
+        <button class="btn btn-default menu-cancel" ng-if="currentView == 'toc'" ng-click="hideToc()">
+            Cancel
+            <span class="fa fa-align-justify"></span>
+        </button>
+        <button class="btn btn-default menu-show" ng-if="currentView == 'content'" ng-click="showToc()">
+            Menu
+            <span class="fa fa-align-justify"></span>
+        </button>
+        <button class="btn btn-default next" ng-if="currentView == 'content' && hasNextPage()" ng-click="nextPage()">
+            {{currentItem.next.title}}
+            <span class="fa fa-arrow-right"></span>
+        </button>
+    </div>
+</div>

@@ -1,0 +1,75 @@
+<bb-header title="'Hi, I am ' + deviceName">
+    <div class="action" ng-click="powerOff()" >
+        <span class="fa fa-power-off"></span>
+        <span>power off</span>
+    </div>
+</bb-header>
+
+<bb-content>
+    <div class="container-fluid dashboard">
+        <div class="row">
+            <div class="col-sm-12 col-md-12 col-lg-8">
+                <h3 class="subtitle">NODES</h3>
+                <div class="node" ng-repeat="node in nodes | orderBy:'name'">
+                    <table class="node-table">
+                        <tr>
+                            <td rowspan="2"><span class="index">{{'0' + ($index + 1)}}</span></td>
+                            <td><span class="name">{{ node.name }}</span></td>
+                            <td><span class="internal-ip-label">INTERNAL IP</span></td>
+                            <td><span class="internal-ip-label">EXTERNAL IP</span></td>
+                            <td><span class="status">STATUS | <span class="status-highlight">{{ node.status }}</span></span></td>
+                            <td rowspan="2" valign="top">
+                                <a class="action" tooltip-trigger="mouseenter" tooltip-placement="right" tooltip="Open Terminal" href="http://{{ node.network.external.ip }}:57575/" target="_blank">
+                                    <span class="fa fa-terminal"></span>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="role">{{ node.role }}</span></td>
+                            <td><span class="internal-ip">> {{ node.network.internal.ip}}</span></td>
+                            <td><span class="internal-ip">> {{ node.network.external.ip}}</span></td>
+                        </tr>
+                    </table>
+
+                </div>
+            </div>
+            <div class="tints col-sm-12 col-md-12 col-lg-4">
+                <h3 ng-if="! hasInstalledTints()">Currently there is no tint installed. You may go to the <a href="#/library">library</a> to install one.</h3>
+
+                <div ng-if="hasInstalledTints()">
+                    <div ng-repeat="(key, tint) in tints">
+                        <div class="card-content">
+                            <div class="cover">
+                                <div class="cover-image-container">
+                                    <div class="cover-outer-align">
+                                        <div class="cover-inner-align">
+                                            <img ng-src="{{ tint.logo }}" alt="{{ tint.slug }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="details">
+                                <h2>
+                                    <a class="title" href="#/library/{{tint.type}}/{{tint.owner}}/{{tint.slug}}">
+                                        {{ tint.name }}
+                                        <span class="paragraph-end"></span>
+                                    </a>
+                                </h2>
+                                <div class="subtitle-container">
+                                    <a class="subtitle" href="#/library/{{tint.type}}/{{tint.owner}}/{{tint.slug}}">{{ tint.owner.firstname }} {{ tint.owner.surname }}</a>
+                                </div>
+                            </div>
+                            <h4>Available Views</h4>
+                            <ul>
+                                <li ng-repeat="view in tint.stack.views">
+                                    <a ng-href="{{view.url}}">{{view.label}}</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</bb-content>

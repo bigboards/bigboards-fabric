@@ -1,0 +1,117 @@
+/* Header */
+@import "../app/common/directives/bb-header/bb-header.css";
+
+
+/**********************************************************************************************************************
+ * SIDEPANE
+ *********************************************************************************************************************/
+
+.bb-sidepane {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background-color: #fafafa;
+    border-right: solid 1px #dedede;
+    color: #515151;
+    padding: 0;
+}
+
+.bb-sidepane.bb-sidepane-slim { width: 50px; }
+.bb-sidepane.bb-sidepane-large { width: 40%; }
+
+.bb-sidepane .bb-sidepane-content {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 50px;
+    background-color: #008888;
+    padding: 10px;
+    color: white;
+}
+
+.bb-sidepane .bb-sidepane-content h1 {
+    color: white;
+    margin: 0;
+    padding: 0;
+    font-size: x-large;
+    text-align: right;
+    height: 40px;
+    border-bottom: solid 1px white;
+    margin-bottom: 20px;
+}
+
+.bb-sidepane.bb-sidepane-slim .bb-sidepane-content { display: none; }
+
+.bb-sidepane .bb-sidepane-menu {
+    width: 50px;
+    height: 100%;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.bb-sidepane .bb-sidepane-menu .bb-sidepane-menu-item {
+    display: table-cell;
+    width: 50px;
+    height: 50px;
+    text-align: center;
+    vertical-align: middle;
+    text-decoration: none;
+    color: #515151;
+}
+
+.bb-sidepane .bb-sidepane-menu .bb-sidepane-menu-item:hover {
+    color: #008888;
+}
+
+.bb-sidepane .bb-sidepane-menu .bb-sidepane-menu-header {
+    display: table;
+}
+
+.bb-sidepane .bb-sidepane-menu .bb-sidepane-menu-header .bb-sidepane-menu-item,
+.bb-sidepane .bb-sidepane-menu .bb-sidepane-menu-footer .bb-sidepane-menu-item {
+    background-color: #008888;
+    color: white;
+}
+
+.bb-sidepane .bb-sidepane-menu-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: table;
+    height: 50px;
+}
+
+/**********************************************************************************************************************
+ * CONTENT
+ *********************************************************************************************************************/
+.bb-content {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    overflow: auto;
+}
+
+
+/**********************************************************************************************************************
+ * TASKS
+ *********************************************************************************************************************/
+
+
+
+.bb-task-tile {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 50px;
+    height: 50px;
+    background-color: #008888;
+    z-index: 200000;
+}

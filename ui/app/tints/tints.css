@@ -1,0 +1,24 @@
+/**********************************************************************************************************************
+ * Tints
+ *********************************************************************************************************************/
+.tintdetails {
+    color: #515151;
+}
+
+.tintdetails > h3:first-child {
+    margin-top: 0;
+}
+
+.tintdetails h3 {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.tintdetails p {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.tintdetails .table td {
+    vertical-align: middle;
+}

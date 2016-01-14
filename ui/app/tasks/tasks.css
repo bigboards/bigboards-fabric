@@ -1,0 +1,90 @@
+/**********************************************************************************************************************
+ * Tasks
+ *********************************************************************************************************************/
+.tasks {
+    padding-top: 20px;
+}
+
+.tasks table tbody tr:hover {
+    background-color: #008888;
+    color: white;
+    cursor: pointer;
+}
+
+.tasks.attempts {
+    padding-top: 20px;
+}
+
+.tasks h3:first-child {
+    margin-top: 0;
+}
+
+.tasks h3 {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.tasks p {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.tasks .table td {
+    vertical-align: middle;
+}
+
+.task-parameters {
+    padding: 20px;
+}
+
+.task-parameter {
+    border-bottom: solid 1px #dedede;
+    margin-bottom: 10px;
+    display: table;
+}
+
+.task-parameter .task-parameter-label {
+    display: table-cell;
+    width: 100%;
+    height: 100%;
+    padding-bottom: 10px;
+}
+
+.task-parameter .task-parameter-label .key {
+    display: block;
+    font-size: large;
+}
+
+.task-parameter .task-parameter-label .description {
+    display: block;
+    font-size: x-small;
+}
+
+.task-parameter .task-parameter-value {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+}
+
+.invoke-actions {
+    width: 100%;
+    padding: 20px;
+}
+
+.attempt .output {
+    /*position: absolute;*/
+    border: none;
+    background-color: #efefef;
+    bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    border-radius: 0;
+}
+
+.attempt .output pre {
+    background: transparent;
+    height: 100%;
+    border: none;
+    overflow-y: scroll;
+}

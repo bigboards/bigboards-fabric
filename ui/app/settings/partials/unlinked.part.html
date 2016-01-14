@@ -1,0 +1,17 @@
+<p>
+    You can link your hex to the hive by performing the following steps:
+<ul>
+    <li>Log into the hive at http://hive.test.bigboards.io</li>
+    <li>Click on the linked hexes menu item</li>
+    <li>Copy the code you see there</li>
+    <li>Paste the code into the textarea below</li>
+    <li>Press the link button</li>
+</ul>
+</p>
+
+<div>
+        <textarea ng-model="linkToken" style="width: 400px; height: 150px;">
+        </textarea>
+</div>
+
+<button class="btn btn-primary" ng-click="link(linkToken)">Link this hex!</button>

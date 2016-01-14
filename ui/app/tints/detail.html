@@ -1,0 +1,53 @@
+<bb-header title="tint.name"></bb-header>
+
+<bb-content>
+        <h3>Current Tint</h3>
+        <p>This hex is currently configured to run <strong>{{tint.name}}</strong>, created by <strong>{{tint.owner}}</strong>. It provides {{tint.description}}</p>
+        <!--<p>You may choose to set this tint to your hand by setting specific configuration settings.</p>-->
+
+        <div ng-if="tint.actions">
+            <h3>Actions</h3>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th class="col-sm-1">label</th>
+                    <th>description</th>
+                    <th class="col-sm-1"></th>
+                </tr>
+                </thead>
+                <tr ng-repeat="action in tint.actions">
+                    <td>{{action.label}}</td>
+                    <td>{{action.description}}</td>
+                    <td>
+                        <a ng-click="invokeAction(action)" class="btn btn-xs btn-default">
+                            <i class="fa fa-play-circle-o"></i>
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div ng-if="tint.views">
+            <h3>Views</h3>
+
+            <table class="table">
+                <thead>
+                <tr>
+                    <th class="col-sm-1">label</th>
+                    <th>description</th>
+                    <th class="col-sm-1"></th>
+                </tr>
+                </thead>
+                <tr ng-repeat="view in tint.views">
+                    <td>{{view.label}}</td>
+                    <td>{{view.description}}</td>
+                    <td>
+                        <a href="{{view.url | externalIp}}" target="_blank" class="btn btn-xs btn-default">
+                            <i class="fa fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        </div>
+</bb-content>

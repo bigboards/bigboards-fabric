@@ -1,0 +1,17 @@
+- shell: docker inspect [[ role.name ]] 2>&1
+  ignore_errors: yes
+  register: container
+
+- shell: docker inspect [[ role.name ]] |grep "Running" |cut -d ':' -f2
+  ignore_errors: yes
+  register: running
+
+- shell: docker stop --time=10 [[ role.name ]]
+  ignore_errors: yes
+  when: running.stdout.find("true") != -1
+
+- shell: docker rm -f [[ role.name ]]
+  when: container.stdout.find('"Id":') != -1
+
+- name: make sure the service script is removed
+  file: state=absent path=/etc/init/[[ role.name ]].conf
