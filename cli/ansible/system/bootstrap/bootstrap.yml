@@ -1,0 +1,332 @@
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+    - name: load the facts (armv7l)
+      when: ansible_machine == 'armv7l'
+      set_fact:
+        node_nic_internal: eth0
+        node_nic_external: eth1
+        hex_arch: armv7l
+
+    - name: load the facts (x86_64)
+      when: ansible_machine == 'x86_64'
+      set_fact:
+        node_nic_internal: eth0
+        node_nic_external: eth1
+        hex_arch: x86_64
+
+    - name: check if there is a br1 interface
+      shell: "[ $(ifconfig br1 2> /dev/null |wc -l) -gt 0 ] && echo 'yes' || echo 'no'"
+      register: has_bridge
+
+    - name: set the nic to use as a reference (armv7l && bridge)
+      when: ansible_machine == 'armv7l' and 'yes' in has_bridge.stdout
+      set_fact:
+        nic_ref: br1
+
+    - name: set the nic to use as a reference (armv7l && no bridge)
+      when: ansible_machine == 'armv7l' and 'no' in has_bridge.stdout
+      set_fact:
+        nic_ref: eth0
+
+    - name: set the nic to use as a reference
+      when: ansible_machine == 'x86_64'
+      set_fact:
+        nic_ref: eth0
+
+    - name: determine the hex ip range
+      shell: echo `ifconfig {{ nic_ref }} 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://'` | rev | cut -c 3- | rev
+      register: hex_ip_range
+
+    - name: determine the hex node sequence
+      shell: echo `ifconfig {{ nic_ref }} 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://'` | rev | cut -d '.' -f 1
+      register: node_sequence
+
+    - name: determine the hex name and id
+      shell: hostname |cut -d '-' -f 1
+      register: hex_name_id
+
+    - assert:
+        that:
+          - "nic_ref is defined"
+          - "hex_ip_range.stdout|length > 0"
+          - "node_sequence.stdout|length > 0"
+          - "hex_name_id.stdout|length > 0"
+
+    - name: create the ansible facts directory
+      file:
+        state: "directory"
+        path: "/etc/ansible/facts.d"
+
+    - name: make sure the correct bigboards facts are available
+      template:
+        src: bb.fact
+        dest: /etc/ansible/facts.d/bb.fact
+
+    - name: load the modules we needed
+      lineinfile:
+        dest: '/etc/modules'
+        line: '{{ item }}'
+        regexp: '^{{ item }}$'
+        state: 'present'
+      when: ansible_machine == 'armv7l'
+      with_items:
+        - usbnet
+        - g_ether
+
+
+    - name: make sure the bb user has a valid home directory
+      file:
+        state: directory
+        path: '/home/bb'
+        owner: bb
+        group: root
+
+    - name: make sure the resources in the old home are owned by the bb user
+      file:
+        state: directory
+        path: '/opt/bb'
+        owner: bb
+        group: root
+        recurse: yes
+
+    - name: make sure the resources from the old home are copied into the new one.
+      sudo: no
+      shell: cp -r /opt/bb/{{ item }} /home/bb/{{ item }} creates=/home/bb/{{ item }}
+      ignore_errors: yes
+      with_items:
+        - '.ansible'
+        - '.bash_history'
+        - '.cache'
+        - '.local'
+        - '.npm'
+        - '.rnd'
+        - '.ssh'
+        - '.viminfo'
+
+    - name: make sure the bb user has the right directory
+      replace:
+        dest: '/etc/passwd'
+        regexp: '/opt/bb'
+        replace: '/home/bb'
+
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+    - name: make sure the resources from the old home are removed.
+      shell: rm -rf /opt/bb/{{ item }} removes=/opt/bb/{{ item }}
+      with_items:
+        - '.ansible'
+        - '.bash_history'
+        - '.cache'
+        - '.local'
+        - '.npm'
+        - '.rnd'
+        - '.ssh'
+        - '.viminfo'
+
+    - name: make sure the bigboards data directory exists and has the right permissions
+      file:
+        path: "{{ item }}"
+        owner: bb
+        group: root
+        state: directory
+      with_items:
+        - /data
+        - /data/bigboards
+
+- hosts: localhost
+  tasks:
+    - name: make sure the bb directory exists
+      sudo: yes
+      file:
+        path: /opt/bb
+        state: directory
+        owner: bb
+        group: root
+
+    - name: make sure the hosts used by ansible are correct
+      sudo: yes
+      template:
+        src: ansible_hosts
+        dest: /etc/ansible/hosts
+
+    - name: make sure the old hosts file is not available anymore
+      sudo: yes
+      file:
+        path: /opt/bb/hosts
+        state: absent
+
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+## x86_64 ######################################################################
+    - name: make sure the correct kernel is being used
+      when: ansible_machine == 'x86_64'
+      apt: name="linux-image-extra-{{ansible_kernel}}" state=latest
+
+## ARMV7L #####################################################################
+    - name: copy the kernel debs to the remote system
+      when: ansible_machine == 'armv7l'
+      copy:
+        src: 'kernel/{{ item }}'
+        dest: '/tmp/{{ item }}'
+        mode: 777
+      with_items:
+        - 'linux-firmware-image-3.19.0-armv7-x4_1cross_armhf.deb'
+        - 'linux-headers-3.19.0-armv7-x4_1cross_armhf.deb'
+        - 'linux-image-3.19.0-armv7-x4_1cross_armhf.deb'
+        - 'linux-libc-dev_1cross_armhf.deb'
+
+    - name: make sure the new kernel is installed
+      when: ansible_machine == 'armv7l'
+      shell: dpkg -i {{ item }}
+      with_items:
+        - '/tmp/linux-firmware-image-3.19.0-armv7-x4_1cross_armhf.deb'
+        - '/tmp/linux-headers-3.19.0-armv7-x4_1cross_armhf.deb'
+        - '/tmp/linux-image-3.19.0-armv7-x4_1cross_armhf.deb'
+        - '/tmp/linux-libc-dev_1cross_armhf.deb'
+
+    - name: get the system version
+      when: ansible_machine == 'armv7l'
+      shell: if [ "$(cat /sys/bus/sdio/devices/mmc1\:0001\:1/device)" = "0x4329" ]; then echo "B1"; elif [ "$(cat /sys/bus/sdio/devices/mmc1\:0001\:1/device)" = "0x4330"  ]; then echo "C1"; else echo "unknown"; fi
+      register: system_version
+      sudo: 'no'
+
+    - name: make sure the correct uEnv file is loaded
+      when: ansible_machine == 'armv7l'
+      copy:
+        src: 'kernel/uEnv-{{system_version.stdout}}.txt'
+        dest: '/boot/uEnv.txt'
+
+    - name: make sure the correct kernel is being loaded
+      when: ansible_machine == 'armv7l'
+      file:
+        src: '/boot/vmlinuz-3.19.0-armv7-x4'
+        dest: '/boot/zImage'
+        state: 'link'
+
+
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+    - name: generate a correct mac address for the internal interface
+      shell: echo "02$(cat /sys/class/net/{{ ansible_local.bb.node.nic_int }}/address |cut -c 3-17)"
+      register: nic_ext_mac
+
+    - name: make sure the network interfaces are set correctly
+      template:
+        src: interfaces
+        dest: /etc/network/interfaces
+
+    - name: make sure the network hosts are set correctly
+      template:
+        src: hosts
+        dest: /etc/hosts
+
+#    - name: make sure the network is restarted
+#      command: bash -c "ifdown {{ item }} && ifup {{ item }}"
+#      when: item != 'lo'
+#      with_items: ansible_interfaces
+
+## ####################################################################################################################
+## Base packages
+## ####################################################################################################################
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+    - name: make sure some necessary packages are installed
+      apt:
+        name: '{{ item }}'
+        state: 'latest'
+      with_items:
+        - parted
+        - apparmor
+
+## ####################################################################################################################
+## NTP
+## ####################################################################################################################
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+    - name: make sure the ntp daemon is installed
+      apt:
+        name: 'ntp'
+        state: 'latest'
+
+    - name: make sure the ntp.conf file is up to date
+      template:
+        src: 'ntp.conf'
+        dest: '/etc/ntp.conf'
+
+    - name: make sure the ntp defaults file is up to date
+      template:
+        src: 'default/ntp'
+        dest: '/etc/default/ntp'
+
+#  handlers:
+#    - name: Restart NTPD
+#      service:
+#        name: 'ntp'
+#        state: 'restarted'
+
+## ####################################################################################################################
+## DNSMASQ
+## ####################################################################################################################
+- hosts: host-coordinators
+  sudo: yes
+  tasks:
+    - name: make sure the software is installed
+      apt:
+        name: "{{ item }}"
+        state: "latest"
+      with_items:
+        - dnsmasq
+
+    - name: make sure the correct dnsmasq file is being used
+      template:
+          src: "dnsmasq.conf"
+          dest: "/etc/dnsmasq.conf"
+#      notify: Restart DNSMasq
+
+#  handlers:
+#    - name: Restart DNSMasq
+#      shell: service dnsmasq restart
+
+## ####################################################################################################################
+## DNS
+## ####################################################################################################################
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+    - name: make sure the dhcp configuration is set correctly
+      template:
+        src: dhclient.conf
+        dest: /etc/dhcp/dhclient.conf
+
+    - name: make sure the dns configuration is set correctly
+      template:
+        src: resolv.conf
+        dest: /etc/resolv.conf
+
+## ####################################################################################################################
+## AVAHI
+## ####################################################################################################################
+#- hosts: host
+#  sudo: yes
+#  tasks:
+#    - name: make sure the avahi configuration file is up to date
+#      template:
+#        src: "avahi/avahi-daemon.conf"
+#        dest: "/etc/avahi/avahi-daemon.conf"
+##      notify: Restart Avahi
+#
+#    - name: make sure avahi is started and will start on boot
+#      service:
+#        name: "avahi-daemon"
+#        state: "running"
+#        enabled: "yes"
+
+#  handlers:
+#    - name: Restart Avahi
+#      shell: service avahi-daemon restart

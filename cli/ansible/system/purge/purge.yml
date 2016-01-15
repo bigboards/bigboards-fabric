@@ -1,0 +1,37 @@
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+  - shell: docker ps |cut -d ' ' -f1 |grep -v CONTAINER
+    register: docker_running
+    failed_when: "docker_running.rc > 1"
+
+  - debug: var=docker_running
+
+  - shell: docker stop --time=10 {{ item }}
+    ignore_errors: yes
+    with_items: docker_running.stdout_lines
+
+  - shell: docker ps -a |cut -d ' ' -f1 |grep -v CONTAINER
+    register: docker_available
+    failed_when: "docker_available.rc > 1"
+
+  - shell: docker rm -f {{ item }}
+    ignore_errors: yes
+    with_items: docker_available.stdout_lines
+
+  - file:
+      path: "/data/{{ item }}"
+      state: "absent"
+    with_lines: find /data/ ! -readable -prune -type f -printf "%P\n"
+
+- hosts: localhost
+  sudo: yes
+  tasks:
+    - file:
+        path: "/opt/bb/tints.d/{{item}}"
+        state: "absent"
+      with_items:
+        - "stack"
+        - "dataset"
+        - "tutor"
+        - "meta.json"

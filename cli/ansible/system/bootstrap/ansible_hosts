@@ -1,0 +1,16 @@
+[local]
+localhost ansible_ssh_user=bb
+
+[host:children]
+host-coordinators
+host-workers
+
+[host-coordinators]
+{{ansible_local.bb.hex.name}}-n1   ansible_ssh_user=bb
+
+[host-workers]
+{{ansible_local.bb.hex.name}}-n2   ansible_ssh_user=bb
+{{ansible_local.bb.hex.name}}-n3   ansible_ssh_user=bb
+{{ansible_local.bb.hex.name}}-n4   ansible_ssh_user=bb
+{{ansible_local.bb.hex.name}}-n5   ansible_ssh_user=bb
+{{ansible_local.bb.hex.name}}-n6   ansible_ssh_user=bb

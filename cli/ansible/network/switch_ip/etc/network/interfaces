@@ -1,0 +1,28 @@
+auto lo
+iface lo inet loopback
+
+# internal network interface
+auto {{ ansible_local.bb.node.nic_int }}
+iface {{ ansible_local.bb.node.nic_int }} inet static
+    address {{ ansible_local.bb.network.range }}.{{ ansible_local.bb.node.sequence }}
+    netmask 255.0.0.0
+{% if ansible_local.bb.node.role == 'master' %}
+    dns-nameservers 127.0.0.1
+{% else %}
+    dns-nameservers {{ ansible_local.bb.network.range }}.1
+{% endif %}
+
+# external network interface
+auto {{ ansible_local.bb.node.nic_ext }}
+iface {{ ansible_local.bb.node.nic_ext }} inet dhcp
+    pre-up ip link add link {{ ansible_local.bb.node.nic_int }} {{ ansible_local.bb.node.nic_ext }} type macvlan
+    pre-up ifconfig {{ ansible_local.bb.node.nic_ext }} hw ether {{ nic_ext_mac.stdout }}
+    post-down ip link del {{ ansible_local.bb.node.nic_ext }}
+
+{% if ansible_machine == 'armv7l' %}
+# usb network interface
+auto usb0
+iface usb0 inet static
+    address 192.168.17.1
+    netmask 255.255.255.0
+{% endif %}

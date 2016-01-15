@@ -1,0 +1,55 @@
+---
+# -- ----------------------------------------------------------------------- --
+# -- UNINSTALL
+# -- ----------------------------------------------------------------------- --
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+    - name: make sure the running daemons are stopped
+      service: name={{ item }} state=stopped
+      ignore_errors: yes
+      with_items:
+        - bigboards-node
+
+    - name: make sure the running daemons are removed
+      apt: name={{ item }} state=absent
+      ignore_errors: yes
+      with_items:
+        - bigboards-node
+
+    - name: make sure the bigboards repository is set to the new version
+      lineinfile: dest=/etc/apt/sources.list regexp="^deb http\://apt\.bigboards\.io" line="deb http://apt.bigboards.io {{ version }} main" backrefs=yes
+
+    - name: make sure the apt repository cache is being refreshed
+      shell: apt-get update
+
+- hosts: localhost
+  sudo: yes
+  tasks:
+    - name: make sure the running daemons are stopped
+      service: name={{ item }} state=stopped
+      ignore_errors: yes
+      with_items:
+        - bigboards-mmc
+
+    - name: make sure the running daemons are removed
+      apt: name={{ item }} state=absent
+      ignore_errors: yes
+      with_items:
+        - bigboards-mcc
+        - bigboards-updater
+
+# -- ----------------------------------------------------------------------- --
+# -- INSTALL
+# -- ----------------------------------------------------------------------- --
+- hosts: localhost
+  sudo: yes
+  tasks:
+    - name: make sure the running daemons are present
+      apt: name={{ item }} state=present force=yes
+      with_items:
+        - bigboards-mmc
+        - bigboards-updater
+
+    - name: make sure the versions file is removed
+      file: path=/opt/bb/.versions state=absent

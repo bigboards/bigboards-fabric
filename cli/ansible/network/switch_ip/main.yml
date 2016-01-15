@@ -1,0 +1,61 @@
+---
+- hosts: localhost
+  sudo: yes
+  tasks:
+    - name: make sure the running daemons are stopped
+      service: name={{ item }} state=stopped
+      ignore_errors: yes
+      with_items:
+        - bigboards-mmc
+
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+    - name: make sure the docker instances and our own daemons are stopped
+      service: name={{ item }} state=stopped
+      ignore_errors: yes
+      with_items:
+        - docker.io
+        - serf
+
+#    - name: update the network configuration on all nodes
+#      template:
+#        src: '{{ item }}'
+#        dest: '/{{ item }}'
+#        owner: 'root'
+#        group: 'root'
+
+    - name: replace occurances of the network prefix
+      replace:
+        dest: '{{ item }}'
+        regexp: '{{ orig_ip_prefix }}'
+        replace: '{{ ip_prefix }}'
+      with_items:
+        - '/etc/network/interfaces'
+        - '/etc/resolv.conf'
+        - '/etc/dhcp/dhclient.conf'
+        - '/etc/serf/serf.conf'
+
+    - name: be sure the internal ip address has been saved to the facts
+      ini_file:
+        dest: '/etc/ansible/facts.d/bb.fact'
+        section: 'network'
+        option: 'range'
+        value: '{{ ip_prefix }}'
+
+    - name: finaly replace the occurances of the old prefix in the hosts file
+      replace:
+        dest: '{{ item }}'
+        regexp: '{{ orig_ip_prefix }}'
+        replace: '{{ ip_prefix }}'
+      with_items:
+        - '/etc/hosts'
+
+    - name: be sure the modifications are saved to disk
+      shell: sync && sync
+
+#- hosts: localhost
+#  sudo: yes
+#  tasks:
+#    - debug:
+#        msg: 'Please powercycle your hex to activate the changes'

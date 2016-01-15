@@ -1,0 +1,363 @@
+#!/bin/bash
+# -- ----------------------------------------------------------------------- --
+# -- bb : BigBoards management script
+# -- ----------------------------------------------------------------------- --
+ACTION=${1}
+DIR=$(dirname "$(readlink -f ${BASH_SOURCE[0]})" )
+
+if [[ $EUID -eq 0 ]];
+then
+   echo "The BB command may not be run as root"
+   exit 1
+fi
+
+# Check if the hosts file exists inside the /opt/bb directory
+HOSTSFILE=/opt/bb/hosts
+[ ! -f "$HOSTSFILE" ] && HOSTSFILE=/etc/ansible/hosts
+PLAYBOOK="ansible-playbook -i ${HOSTSFILE}"
+
+usage() {
+    echo "Usage: $0 [version|network|run|mmc|container|system|help]" 1>&2; exit 1;
+}
+
+verifyPrerequisites() {
+    if [ ! -e "/usr/bin/ansible" ]; then
+        echo
+        echo "Ansible has not been found. We will install it before continuing."
+        echo
+
+        sudo apt-get install -y software-properties-common
+        sudo apt-add-repository -y ppa:ansible/ansible
+        sudo apt-get update
+        sudo apt-get install -y ansible
+    fi
+}
+
+verifyHostsFile() {
+    VALID_ANSIBLE_HOSTS=$(grep "\[host-coordinators\]" /etc/ansible/hosts | wc -l)
+
+    [ ! -e "/etc/ansible/hosts" ] && generateHostsFile && return
+    [ "$VALID_ANSIBLE_HOSTS" == "0" ] && generateHostsFile && return
+}
+
+generateHostsFile() {
+        HEX_NAME_ID=$(hostname |cut -d '-' -f 1)
+
+        echo
+        echo "No ansible hosts file has been found. Generating one for ${HEX_NAME_ID}."
+        echo
+
+cat << EOF | sudo tee /etc/ansible/hosts
+[local]
+localhost   connection=local
+
+[host:children]
+host-coordinators
+host-workers
+
+[host-coordinators]
+${HEX_NAME_ID}-n1   ansible_ssh_user=bb
+
+[host-workers]
+${HEX_NAME_ID}-n2   ansible_ssh_user=bb
+${HEX_NAME_ID}-n3   ansible_ssh_user=bb
+${HEX_NAME_ID}-n4   ansible_ssh_user=bb
+${HEX_NAME_ID}-n5   ansible_ssh_user=bb
+${HEX_NAME_ID}-n6   ansible_ssh_user=bb
+
+EOF
+}
+
+requestPowerCycle() {
+    echo
+    echo
+    echo "################################################################################"
+    echo "##                                                                            ##"
+    echo "##                            I M P O R T A N T                               ##"
+    echo "##                                                                            ##"
+    echo "##   You must powercycle the hex in order for the changes to be picked up!    ##"
+    echo "##                                                                            ##"
+    echo "################################################################################"
+    echo
+    echo
+}
+
+validateTintBuilder() {
+    [ ! -e "${HOME}/.tint-builder" ] && echo "No .tint-builder file found in the home directory of ${USER} " && exit 8;
+    source "${HOME}/.tint-builder"
+
+    [ -z "${BB_USERNAME}" ] && echo "BB_USERNAME not set" && exit 7;
+    [ -z "${BB_EMAIL}" ] && echo "BB_EMAIL not set" && exit 7;
+    [ -z "${BB_PASSWORD}" ] && echo "BB_PASSWORD not set" && exit 7;
+}
+
+update() {
+    sudo apt-get update
+    sudo apt-get install -y --force-yes bigboards-updater bigboards-cli bigboards-mmc
+
+    AVAILABLE_PATCHES="$(ls /opt/bb/runtimes/bigboards-updater/patches)"
+    CURRENT_VERSION=
+
+    if [ -f /opt/bb/.versions ]
+    then
+        CURRENT_VERSION="$(tail -n 1 /opt/bb/.versions | cut -d '|' -f1)"
+    fi
+
+    for p in ${AVAILABLE_PATCHES}
+    do
+        if [ -z "${CURRENT_VERSION}" ] || [ "${p}" -gt "${CURRENT_VERSION}" ]
+        then
+            # check if there is a more specific install file available
+            INSTALL_FILE="/opt/bb/runtimes/bigboards-updater/patches/${p}/install-$(uname -m).yml"
+
+            # fallback to the default install file if the specific one does not exist
+            if [ ! -f "$INSTALL_FILE" ]; then
+                INSTALL_FILE="/opt/bb/runtimes/bigboards-updater/patches/${p}/install.yml"
+            fi
+
+            echo "Invoking patch ${p} using $INSTALL_FILE"
+            ${PLAYBOOK} ${INSTALL_FILE} && echo "${p}|$(date)" >> /opt/bb/.versions
+
+            [ "$?" -ne "0" ] && echo "Something went wrong when invoking patch ${p}. Have a look at the output above to figure out what went wrong." && break;
+        fi
+    done
+
+    sudo service bigboards-mmc restart
+}
+
+verifyPrerequisites
+verifyHostsFile
+
+case "${ACTION}" in
+    firmware)
+        case "${2}" in
+            upgrade)
+                [ -z "${3}" ] && echo "No target version provided! Please specify this as 3rd parameter ..." && usage
+
+                ${PLAYBOOK} --extra-vars "version=${3}" ${DIR}/ansible/firmware/upgrade/main.yml
+                ;;
+            update)
+                update
+                ;;
+            help|*)
+                cat <<-EOF
+Manage the software version on the hex.
+
+USAGE: $0 firmware [upgrade|update|help] [arguments]
+
+OPTIONS
+
+    update  Update the software version on the hex. An update is a smaller update of some of the
+            functionality of the hex.
+
+
+    upgrade Upgrade to a new release of the software. A release is different from an update
+            and is considered to be a major upgrade.
+
+            arguments:
+                release-name     The name of the release to upgrade to
+
+
+    help    Show this help message
+
+EOF
+                ;;
+        esac
+        ;;
+    network)
+        case "${2}" in
+            switch)
+                # validate the given network prefix
+                if [[ ! $3 =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+                    echo "Invalid network prefix! please specify a network prefix as xxx.xxx.xxx"
+                    exit 3
+                fi
+
+                ORIGINAL_RANGE=$(grep "range" /etc/ansible/facts.d/bb.fact |cut -d '=' -f2)
+
+                ${PLAYBOOK} --extra-vars "ip_prefix=${3} orig_ip_prefix=${ORIGINAL_RANGE//\./\\.}" ${DIR}/ansible/network/switch_ip/main.yml
+
+                [ $? -eq 0 ] && requestPowerCycle
+                ;;
+            help|*)
+                cat <<-EOF
+Manage the network.
+
+USAGE: $0 network [switch|help] [arguments]
+
+OPTIONS
+
+    switch  Switch the internal network. This is an important step when using multiple
+            hexes in the same network.
+
+            arguments:
+                ip-prefix     The network prefix to use. This is the first 3 numbers of your
+                              ip address. Valid examples are 172.21.3 or 192.168.1
+
+
+    help    Show this help message
+
+EOF
+                ;;
+        esac
+        ;;
+    run)
+        ansible host -i /opt/bb/hosts --sudo -m shell -a "$2"
+        ;;
+    mmc)
+        sudo service bigboards-mmc $2
+        ;;
+    container)
+        case "${2}" in
+            list)
+                sudo docker ps
+                ;;
+            attach)
+                sudo docker exec -it $3 /bin/bash
+                ;;
+            tail)
+                sudo docker logs --tail=100 -f $3
+                ;;
+            build)
+                validateTintBuilder
+
+                ARCH=$(uname -m)
+                GIT_URL=$3
+                SLUG=$4
+
+                echo "Logging into the docker hub"
+                sudo docker login -e ${BB_EMAIL} -u ${BB_USERNAME} -p ${BB_PASSWORD}
+
+                [ ! -e ~/build ] && mkdir ~/build
+                pushd ~/build
+                if [ -e "${SLUG}" ];
+                then
+                    pushd ${SLUG}
+                    git pull
+                    popd
+                else
+                    git clone ${GIT_URL} ${SLUG}
+                fi
+
+                for D in `find ${SLUG}/docker -mindepth 1 -type d`
+                do
+                    sed -i -- "s/__arch__/${ARCH}/g" ${D}/Dockerfile
+
+                    CONTAINER_NAME="$(basename $D)"
+                    IMAGE_NAME="${BB_USERNAME}/${CONTAINER_NAME}-${ARCH}:latest"
+
+                    echo "Building ${IMAGE_NAME}"
+                    sudo -E docker build -t ${IMAGE_NAME} ${D}
+
+                    echo "Pushing ${IMAGE_NAME}"
+                    sudo -E docker push ${IMAGE_NAME}
+                done
+
+                popd
+                ;;
+            help|*)
+                cat <<-EOF
+Manage the docker containers.
+
+USAGE: $0 container [list|attach|tail|build|help] [arguments]
+
+OPTIONS
+
+    list    List the available containers
+
+
+    attach  Attach the terminal to the container with the given name
+
+            arguments:
+                container-name     The name of the container to connect to
+
+
+    tail    Follow the output of the container with the given name
+
+            arguments:
+                container-name     The name of the container to connect to
+
+
+    build   Build the docker containers for the tint with the given git url. We will look for a
+            folder named 'docker' inside the repository. We will consider each subfolder of the
+            docker folder a repository.
+
+            arguments:
+                git-url           The url pointing to the git repository. The git url can be one
+                                  from github, bitbucket or any other valid url which can be passed
+                                  to the git clone command.
+                folder-name       The name of the folder hosting the tint files.
+
+
+    help    Show this help message
+
+EOF
+                ;;
+            *)
+        esac
+        ;;
+    system)
+        case "${2}" in
+            bootstrap)
+                ${PLAYBOOK} ${DIR}/ansible/system/bootstrap/bootstrap.yml
+
+                [ $? -eq 0 ] && requestPowerCycle
+                ;;
+            purge)
+                ${PLAYBOOK} ${DIR}/ansible/system/purge/purge.yml
+                ;;
+            purge-legacy)
+                ${PLAYBOOK} ${DIR}/ansible/system/purge/purge-legacy.yml
+                ;;
+            version)
+                WIRELESS_CHIP=$(cat /sys/bus/sdio/devices/mmc1\:0001\:1/device)
+                if [ "$WIRELESS_CHIP" == "0x4329" ]; then
+                    echo "B1"
+                elif [ "$WIRELESS_CHIP" == "0x4330"  ]; then
+                    echo "C1"
+                else
+                    echo "unknown"
+                fi
+                ;;
+            help|*)
+                cat <<-EOF
+Manage the system.
+
+USAGE: $0 system [purge|version|help]
+
+OPTIONS
+
+    bootstrap   Bootstrap the system. This should only be needed the first time you boot the hex.
+
+    purge       Clear the system from all containers and state. You will end up with a
+                pristine system to start from.
+
+
+    version     Show the hardware revision
+
+
+    help        Show this help message
+
+EOF
+                ;;
+        esac
+        ;;
+    help|*)
+        cat <<-EOF
+Interact with the hex.
+
+USAGE: $0 [version|network|run|mmc|container|system|help]
+
+OPTIONS
+
+    firmware    Manage the hex firmware.
+    network     Manage the network.
+    run         Run a command on all nodes of the hex.
+    mmc         Pass a command to the mmc daemon.
+    container   Manage the docker containers.
+    system      Manage the system.
+    help        Show this help message
+
+EOF
+        ;;
+esac
