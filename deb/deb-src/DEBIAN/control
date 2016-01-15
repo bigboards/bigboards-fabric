@@ -1,0 +1,8 @@
+Package: [[name]]
+Version: [[version]]
+Section: base
+Priority: optional
+Architecture: all
+Depends:
+Maintainer: BigBoards <hello@bigboards.io>
+Description: The BigBoards Management Console

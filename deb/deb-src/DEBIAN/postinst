@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+# -- add the bigboards system user
+if id -u bb >/dev/null 2>&1; then
+        echo "user exists"
+else
+        adduser --system bb
+fi
+
+# -- create the bigboards tints directory
+sudo -u bb mkdir -p /opt/bb/tints.d
+mkdir -p /var/log/bigboards/tasks
+chown -R bb /var/log/bigboards
+chmod -R 777 /var/log/bigboards
+
+# -- change the rights to the bigboards directory
+chown bb -R /opt/bb/runtimes/bigboards-mmc
+
+if [ ! -e "/usr/local/bin/bower" ];
+then
+    npm install bower -g
+fi
+
+pushd /opt/bb/runtimes/bigboards-mmc
+    # -- remove the old modules
+    rm -rf npm_modules
+
+    # -- install the nodejs api dependencies
+    npm install
+popd
+
+pushd /opt/bb/runtimes/bigboards-mmc/client
+    # -- remove the old modules
+    rm -rf bower_components
+
+    # -- make sure bower installs all dependencies
+    sudo -u bb bower install --config.interactive=false
+popd
