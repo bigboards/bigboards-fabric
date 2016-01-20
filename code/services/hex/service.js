@@ -8,75 +8,27 @@ var Q = require('q'),
     https = require('https'),
     auth0 =  require('../../auth0');
 
-function HexService(mmcConfig, hexConfig, templater, services, serf) {
+var consul = require('consul')();
+
+function HexService(mmcConfig, templater, services, consul) {
     this.mmcConfig = mmcConfig;
-    this.hexConfig = hexConfig;
     this.templater = templater;
     this.services = services;
-    this.serf = serf;
-    this.nodeCache = [];
-
-    var self = this;
-
-    self._updateNodeList();
-
-    var serfMemberHandler = this.serf.stream('member-join,member-leave,member-update');
-    serfMemberHandler.on('data', function(data) {
-        if (!data || !data.data || !data.data.Members) return;
-
-        self._updateNodeList();
-    });
 
     fsu.mkdir(this.mmcConfig.dir.tints + '/stack');
     fsu.mkdir(this.mmcConfig.dir.tints + '/dataset');
     fsu.mkdir(this.mmcConfig.dir.tints + '/tutorial');
 }
 
-HexService.prototype._updateNodeList = function() {
-    var self = this;
-
-    return self.serf.members().then(function(members) {
-        var newNodeList = [];
-
-        for ( var idx in members ) {
-            var item = members[idx];
-
-            var int_itf = item.Tags['network.internal'];
-            var ext_itf = item.Tags['network.external'];
-
-            newNodeList.push({
-                name: item.Name,
-                status: item.Status,
-                role: item.Tags['role'],
-                arch: item.Tags['arch'],
-                hex_id: item.Tags['hex-id'],
-                network: {
-                    internal: {
-                        itf: int_itf,
-                        ip: item.Tags['network.' + int_itf + '.ip'],
-                        mac: item.Tags['network.' + int_itf + '.mac'],
-                        netmask: item.Tags['network.' + int_itf + '.netmask'],
-                        broadcast: item.Tags['network.' + int_itf + '.broadcast']
-                    },
-                    external: {
-                        itf: ext_itf,
-                        ip: item.Tags['network.' + ext_itf + '.ip'],
-                        mac: item.Tags['network.' + ext_itf + '.mac'],
-                        netmask: item.Tags['network.' + ext_itf + '.netmask'],
-                        broadcast: item.Tags['network.' + ext_itf + '.broadcast']
-                    }
-                }
-            });
-        }
-
-        self.nodeCache = newNodeList;
-
-        return newNodeList;
-    });
-};
-
 HexService.prototype.get = function() {
-    return Q(this.hexConfig.all());
+    var defer = Q.defer();
+
+    consul.kv.get('hex', function(err, result) {
+        if (err) return defer.reject(err);
+        defer.resolve((result) ? JSON.parse(result.Value) : {});
+    });
+
+    return defer.promise;
 };
 
 HexService.prototype.powerdown = function() {
@@ -93,91 +45,59 @@ HexService.prototype.powerdown = function() {
  * @param token the token used for authenticating and identifying the user to which to link the hex.
  */
 HexService.prototype.link = function(token) {
-    var self = this;
+    var hiveToken = jwt.decode(token).hive_token;
+    var decodedToken = jwt.decode(hiveToken);
 
-    // -- link the device to the profile. We can do this by calling auth0 and adding it to the metadata. I think we
-    // -- should make use of a dedicated api from auth0 for this but I don't find any documentation about that yet.
-    // -- look at https://github.com/auth0/docs/issues/416 for that.
-    var metadata = {
-        hexes: {}
+    var data = {
+        token: hiveToken,
+        user: {
+            id: decodedToken.hive_id,
+            name: decodedToken.name,
+            email: decodedToken.email,
+            picture: decodedToken.picture
+        }
     };
 
-    metadata.hexes[this.hexConfig.get('id')] = {
-        name: this.hexConfig.get('name'),
-        architecture: this.hexConfig.get('arch')
-    };
+    var defer = Q.defer();
 
-    return auth0.user.updateMetadata(token, metadata)
-        .then(function(profile) {
+    consul.kv.set('hex', JSON.stringify(data, null, 2), function(err, result) {
+        if (err) return defer.reject(err);
+        defer.resolve(result);
+    });
 
-            var hiveToken = jwt.decode(token).hive_token;
-            var decodedToken = jwt.decode(hiveToken);
-
-            // -- save the profile to the local storage. Also save the hive token
-            self.hexConfig.set([
-                { key: 'hive.token', value: hiveToken },
-                { key: 'hive.user.id', value: decodedToken.hive_id },
-                { key: 'hive.user.name', value: profile.name },
-                { key: 'hive.user.email', value: profile.email },
-                { key: 'hive.user.picture', value: profile.picture }
-            ])
-        });
+    return defer.promise;
 };
 
 HexService.prototype.unlink = function() {
-    var self = this;
+    var defer = Q.defer();
 
-    // -- link the device to the profile. We can do this by calling auth0 and adding it to the metadata. I think we
-    // -- should make use of a dedicated api from auth0 for this but I don't find any documentation about that yet.
-    // -- look at https://github.com/auth0/docs/issues/416 for that.
-    var token = this.hexConfig.get('hive.token');
+    consul.kv.del('hex', function(err, result) {
+        if (err) return defer.reject(err);
+        defer.resolve(result);
+    });
 
-    var metadata = {
-        hexes: {}
-    };
-
-    metadata.hexes[this.hexConfig.get('id')] = null;
-
-    // TODO: This needs to be implemented the correct way.
-    //return auth0.user.get(token).then(function(profile) {
-    //    delete profile.app_metadata.hexes[self.hexConfig.get('id')];
-
-        //return auth0.user.updateMetadata(token, profile.app_metadata)
-        //    .then(function(profile) {
-                //return auth0.token.blacklist(token).then(function() {
-                return Q(self.hexConfig.remove(['hive.token', 'hive.user.id', 'hive.user.name', 'hive.user.email', 'hive.user.picture']));
-                //});
-            //});
-    //});
+    return defer.promise;
 };
 
 /*********************************************************************************************************************
  * NODES
  *********************************************************************************************************************/
 HexService.prototype.listNodes = function() {
-    return Q(this.nodeCache);
-};
+    var defer = Q.defer();
 
-HexService.prototype.addNode = function(node) {
-    var idx = indexForNode(this.nodeCache, node);
+    consul.catalog.node.list(function(err, result) {
+        if (err) return defer.reject(err);
 
-    if (idx == -1) {
-        this.nodeCache.push(node);
-        log.info('Added node ' + node.Name);
-    } else {
-        this.updateNode(node);
-        log.info('Updated node ' + node.Name);
-    }
-};
+        var res = [];
 
-HexService.prototype.updateNode = function(node) {
-    this.nodeCache[indexForNode(this.nodeCache, node)] = node;
-    log.info('Updated node ' + node.Name);
-};
+        result.forEach(function(n) {
+            res.push({node: n.Node, address: n.Address});
+        });
 
-HexService.prototype.removeNode = function(node) {
-    delete this.nodeCache[indexForNode(this.nodeCache, node)];
-    log.info('Removed node ' + node.Name);
+        return defer.resolve(res);
+    });
+
+    return defer.promise;
 };
 
 /*********************************************************************************************************************

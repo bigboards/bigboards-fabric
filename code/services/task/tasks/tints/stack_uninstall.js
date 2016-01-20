@@ -5,7 +5,7 @@ var Q = require('q'),
 var TaskUtils = require('../../../../utils/task-utils'),
     TintUtils = require('../../../../utils/tint-utils');
 
-module.exports = function(configuration, services) {
+module.exports = function(services) {
     return {
         code: 'stack_uninstall',
         description: 'removing the tint from the hex',

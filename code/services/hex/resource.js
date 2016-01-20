@@ -1,9 +1,8 @@
 var ApiUtils = require('../../utils/api-utils'),
     Q = require('q');
 
-function HexResource(hexService, serf) {
+function HexResource(hexService) {
     this.hexService = hexService;
-    this.serf = serf;
 }
 
 /**

@@ -3,7 +3,7 @@ var Q = require('q'),
 
 var TaskUtils = require('../../../../utils/task-utils');
 
-module.exports = function(configuration, services) {
+module.exports = function(services) {
     return {
         code: 'tutor_uninstall',
         description: 'removing the tutor tint from the hex',

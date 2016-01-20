@@ -1,7 +1,7 @@
 var Q = require('q'),
     TaskUtils = require('../../../../utils/task-utils');
 
-module.exports = function(configuration) {
+module.exports = function() {
     return {
         code: 'dummy',
         description: 'Perform a dummy task',

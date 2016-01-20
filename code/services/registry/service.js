@@ -3,20 +3,20 @@ var Q = require('q'),
     log = require('winston'),
     Errors = require('../../errors');
 
-function RegistryService(mmcConfig, hexConfig, registryStore) {
+var kv = require('../../kv');
+
+function RegistryService(mmcConfig) {
     this.mmcConfig = mmcConfig;
-    this.hexConfig = hexConfig;
-    this.store = registryStore;
 }
 
 RegistryService.prototype.getRegistries = function() {
-    return Q(this.store.all());
+    return kv.list('registries');
 };
 
 RegistryService.prototype.getRegistry = function(name, sync) {
     if (! name) throw new Errors.IllegalParameterError("No registry name provided.");
 
-    return (sync) ? this.store.get(name) : Q(this.store.get(name));
+    return kv.get('registries/' + name);
 };
 
 RegistryService.prototype.addRegistry = function(registryData) {
@@ -25,30 +25,21 @@ RegistryService.prototype.addRegistry = function(registryData) {
             throw new Errors.IllegalParameterError("No " + field + " field found inside the request body");
     });
 
-    this.store.set(registryData.name, registryData);
-
-    return Q(this.store.get(registryData.name));
+    return kv.set('registries/' + registryData.name, registryData);
 };
 
 RegistryService.prototype.updateRegistry = function(name, registryData) {
-    if (! this.store.hasOwnProperty(name)) throw new Errors.NotFoundError("No registry named '" + name + "' found.");
+    return kv.update('registries/' + name, function(data) {
+        ["email", "user", "password"].forEach(function(field) {
+            if (!registryData.hasOwnProperty(field)) return;
 
-    var self = this;
-    var obj = self.store.get(name);
-
-    ["email", "user", "password"].forEach(function(field) {
-        if (!registryData.hasOwnProperty(field)) return;
-
-        obj[field] = registryData[field];
+            data[field] = registryData[field];
+        });
     });
-
-    this.store.set(name, obj);
-
-    return Q(obj);
 };
 
 RegistryService.prototype.removeRegistry = function(name) {
-    this.store.remove(name);
+    return kv.remove('registries/' + name);
 };
 
 module.exports = RegistryService;

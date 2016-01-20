@@ -10,28 +10,29 @@ var express = require('express'),
     Container = require('./container'),
     Services = require('./services'),
     winston = require('winston'),
-    Serfer = require('serfer/src/'),
     Q = require('q'),
     Templater = require('./utils/templater'),
     KV = require('./kv'),
     ObjStore = require('./obj');
+var disk = require('diskusage');
 
 mmcConfig = initializeMMCConfiguration();
 
-var serfer = new Serfer();
-serfer.connect().then(function() {
+var consul = require('consul')();
+
+// -- create a session on consul
+registerNode('wlp2s0', '/tmp').then(function(sessionId) {
+    winston.info('Consul session created with id ' + sessionId);
+
     var app = initializeExpress();
     var server = initializeHttpServer(app);
 
-    // -- get the runtime environment
+// -- get the runtime environment
     mmcConfig.environment = app.get('env');
 
-    var hexConfig = new KV(mmcConfig.file.hex);
-    var registryStore = new ObjStore(mmcConfig.file.registry);
+    var services = initializeServices(mmcConfig, app);
 
-    var services = initializeServices(mmcConfig, hexConfig, registryStore, serfer, app);
-
-    services.task.registerDefaultTasks(hexConfig, services);
+    services.task.registerDefaultTasks(services);
 
     var io = initializeSocketIO(server, services);
 
@@ -39,12 +40,74 @@ serfer.connect().then(function() {
         winston.info('BigBoards-mmc listening on port ' + app.get('port'));
     });
 }).fail(function(error) {
-    handleError(error);
+    winston.log('error', error);
+    winston.log('error', error.stack);
 });
 
 process.on('uncaughtException', function(err) {
     handleError(err);
 });
+
+function registerNode(nic, dataDir) {
+    var defer = Q.defer();
+
+    consul.session.create({behaviour: 'delete', name: 'Fabric'}, function(err, result) {
+        if (err) return defer.reject(err);
+
+        var sessionId = result.ID;
+
+        // -- check if the nic is available
+        var nics = os.networkInterfaces();
+        if (! nics[nic]) {
+            console.log('Unable to find details about the ' + nic + ' network interface. Does it have an ip?');
+            return 1;
+        }
+
+        var data = {
+            deviceId: null,
+            hostname: os.hostname(),
+            arch: getArch(),
+            memory: os.totalmem(),
+            cpus: [],
+            disks: [],
+            ipv4: null,
+            mac: null
+        };
+
+        // -- read the disk data
+        Q.all([
+            getDiskInfo('/'),
+            getDiskInfo(dataDir)
+        ]).then(function(disks) {
+            data.disks.push({ type: 'os', mount: '/', size: disks[0].total});
+            data.disks.push({ type: 'os', mount: '/', size: disks[1].total});
+        }).then(function() {
+            // -- format the cpu's
+            os.cpus().forEach(function (cpu) {
+                data.cpus.push(cpu['model']);
+            });
+
+            nics[nic].forEach(function (address) {
+                if (address['family'] == 'IPv4') {
+                    data.ipv4 = address.address;
+                    data.mac = address.mac;
+                    data.deviceId = address.mac.replace(/\:/g, '').toLowerCase()
+                }
+            });
+
+            consul.kv.set({
+                key: 'nodes/' + data.deviceId,
+                value: JSON.stringify(data, null, 2),
+                acquire: sessionId
+            }, function(err, result) {
+                if (err) return defer.reject(err);
+                return defer.resolve(sessionId);
+            });
+        });
+    });
+
+    return defer.promise;
+}
 
 function initializeMMCConfiguration() {
     var config = require('./config').lookupEnvironment();
@@ -79,9 +142,7 @@ function initializeExpress() {
     app.use(cors(corsOptions));
     app.use(express.bodyParser());
     app.use(express.json());
-    app.use(express.urlencoded());
-    app.use(express.methodOverride());
-    app.use(express.static(path.join(__dirname, '../client')));
+    app.use(express.static(path.join(__dirname, './ui')));
     app.use(app.router);
 
     // development only
@@ -109,25 +170,25 @@ function initializeSocketIO(server, services) {
     return io;
 }
 
-function initializeServices(mmcConfig, hexConfig, registryStore, serf, app) {
-    var templater = new Templater(hexConfig);
+function initializeServices(mmcConfig, app) {
+    var templater = new Templater();
     winston.log('info', 'Service Registration:');
 
     var services = {};
 
-    services.task = new Services.Task.Service(mmcConfig, hexConfig);
+    services.task = new Services.Task.Service(mmcConfig);
     Services.Task.link(app, services);
 
-    services.settings = new Services.Settings.Service(mmcConfig, hexConfig);
+    services.settings = new Services.Settings.Service(mmcConfig);
     Services.Settings.link(app, services);
 
-    services.hex = new Services.Hex.Service(mmcConfig, hexConfig, templater, services, serf);
+    services.hex = new Services.Hex.Service(mmcConfig, templater, services);
     Services.Hex.link(app, services);
 
-    services.tutorials = new Services.Tutorials.Service(mmcConfig, hexConfig, services, templater);
+    services.tutorials = new Services.Tutorials.Service(mmcConfig, services, templater);
     Services.Tutorials.link(app, services);
 
-    services.registry = new Services.Registry.Service(mmcConfig, hexConfig, registryStore);
+    services.registry = new Services.Registry.Service(mmcConfig);
     Services.Registry.link(app, services);
 
     return services;
@@ -146,4 +207,24 @@ function handleError(error) {
         default:
             winston.log('error', error.stack);
     }
+}
+
+function getArch() {
+    var arch = os.arch();
+
+    if (arch == 'x64') return 'x86_64';
+    if (arch == 'arm') return 'armv7l';
+    if (arch == 'ia32') return 'x86';
+    return 'unknown';
+}
+
+function getDiskInfo(path) {
+    var defer = Q.defer();
+
+    disk.check(path, function(err, disk) {
+        if (err) return defer.reject(err);
+        return defer.resolve(disk);
+    });
+
+    return defer.promise;
 }

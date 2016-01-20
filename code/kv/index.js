@@ -1,102 +1,74 @@
-var fs = require('fs'),
-    fsu = require('../utils/fs-utils'),
-    log = require('winston');
+var Q = require('q');
+var consul = require('consul')();
 
-function KeyValueStore(file) {
-    this.file = file;
+module.exports = {
+    get: getValue,
+    set: setValue,
+    update: updateValue,
+    remove: removeValue,
+    list: listKeys
+};
 
-    var self = this;
+function getValue(key) {
+    var defer = Q.defer();
 
-    // -- check if the file exists
-    fsu.exists(file).then(function(exists) {
-        if (!exists) {
-            log.error('Unable to find the file backing the key/value store at '  + file + '!');
-        } else {
-            self.reload();
-        }
+    consul.kv.get(key, function(err, data) {
+        if (err) return defer.reject(err);
+
+        return defer.resolve(JSON.parse(data.Value));
     });
+
+    return defer.promise;
 }
 
-KeyValueStore.prototype.reload = function() {
-    try {
-        this.cache = fsu.readYamlFileSync(this.file);
-    } catch (error) {
-        throw new Error('Unable to parse the contents of the ' + this.file + ' file into a key/value store: ' + error.message);
-    }
-};
+function setValue(key, value) {
+    var defer = Q.defer();
 
-KeyValueStore.prototype.set = function(key, value) {
-    var self = this;
-    if( Object.prototype.toString.call( key ) === '[object Array]' ) {
-        key.forEach(function(k) {
-            self.cache[k.key] = serialize(k.value);
-        })
-    } else {
-        this.cache[key] = serialize(value);
-    }
+    consul.kv.set(key, value, function(err, data) {
+        if (err) return defer.reject(err);
 
-    persist(this.file, this.cache);
-};
+        return defer.resolve(JSON.parse(data.Value));
+    });
 
-KeyValueStore.prototype.get = function(key) {
-    return deserialize(this.cache[key]);
-};
-
-KeyValueStore.prototype.remove = function(key) {
-    var self = this;
-
-    if( Object.prototype.toString.call( key ) === '[object Array]' ) {
-        key.forEach(function(k) {
-            delete self.cache[k];
-        })
-    } else {
-        delete this.cache[key];
-    }
-
-    persist(this.file, this.cache);
-};
-
-KeyValueStore.prototype.list = function(prefix) {
-    var result = {};
-
-    for (var k in this.cache) {
-        if (! this.cache.hasOwnProperty(k)) continue;
-
-        if (k.indexOf(prefix) == 0) {
-            result[k] = this.cache[k];
-        }
-    }
-
-    return result;
-};
-
-KeyValueStore.prototype.all = function() {
-    return this.cache;
-};
-
-module.exports = KeyValueStore;
-
-function persist(path, contents) {
-    fsu.writeYamlFileSync(path, contents);
-    log.debug('KeyValueStore persisted to disk!');
+    return defer.promise;
 }
 
-function serialize(value) {
-    if (!value) return null;
+function updateValue(key, updateHandler) {
+    var defer = Q.defer();
 
-    if( Object.prototype.toString.call( value ) === '[object Array]' ) {
-        return value.join(',');
-    } else {
-        return value;
-    }
+    consul.kv.get(key, function(err, data) {
+        if (err) return defer.reject(err);
+        if (!data) return defer.reject(new Error('No data found at ' + key));
+
+        var obj = JSON.parse(data.Value);
+        var res = updateHandler(obj);
+
+        consul.kv.set(res, JSON.stringify(res, null, 2), function(err, data) {
+            if (err) return defer.reject(err);
+
+            defer.resolve(JSON.parse(data.Value));
+        });
+    });
+
+    return defer.promise;
 }
 
-function deserialize(cypher) {
-    if (!cypher) return null;
+function removeValue(key) {
+    var defer = Q.defer();
 
-    if (cypher.indexOf(',') != -1) {
-        return cypher.split(',');
-    }
+    consul.kv.del(key, function(err, data) {
+        return (err) ? defer.reject(err) : defer.resolve(data);
+    });
 
-    return cypher;
+    return defer.promise;
+}
+
+function listKeys(prefix) {
+    var defer = Q.defer();
+
+    consul.kv.keys(prefix, function(err, data) {
+        return (err) ? defer.reject(err) : defer.resolve(data);
+    });
+
+    return defer.promise;
 }

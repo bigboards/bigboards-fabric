@@ -8,9 +8,8 @@ var Q = require('q'),
     log = require('winston'),
     tu = require('../../utils/tint-utils');
 
-function TutorialService(mmcConfig, hexConfig, services, templater) {
+function TutorialService(mmcConfig, services, templater) {
     this.mmcConfig = mmcConfig;
-    this.hexConfig = hexConfig;
     this.services = services;
     this.templater = templater;
 

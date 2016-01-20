@@ -1,9 +1,8 @@
 var ApiUtils = require('../../utils/api-utils'),
     Q = require('q');
 
-function TaskResource(taskService, serf) {
+function TaskResource(taskService) {
     this.taskService = taskService;
-    this.serf = serf;
 }
 
 TaskResource.prototype.listTasks = function(req, res) {

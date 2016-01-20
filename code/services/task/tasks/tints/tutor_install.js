@@ -6,7 +6,7 @@ var TaskUtils = require('../../../../utils/task-utils'),
     FsUtils = require('../../../../utils/fs-utils'),
     TintUtils = require('../../../../utils/tint-utils');
 
-module.exports = function(configuration, services) {
+module.exports = function(services) {
     return {
         code: 'tutor_install',
         description: 'installing the tutor tint on the hex',

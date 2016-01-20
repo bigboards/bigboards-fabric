@@ -3,31 +3,34 @@ var Q = require('q'),
     log = require('winston'),
     Errors = require('../../errors');
 
-function SettingsService(mmcConfig, hexConfig) {
+var consul = require('consul')();
+
+function SettingsService(mmcConfig) {
     this.mmcConfig = mmcConfig;
-    this.hexConfig = hexConfig;
 }
 
 /*********************************************************************************************************************
  * Hex
  *********************************************************************************************************************/
 SettingsService.prototype.getHexSettings = function() {
-    return this.hexConfig;
+    return this.getClientSettings();
 };
 
 /*********************************************************************************************************************
  * Client
  *********************************************************************************************************************/
 SettingsService.prototype.getClientSettings = function() {
-    return Q({
-        id: this.hexConfig.get('id'),
-        name: this.hexConfig.get('name'),
-        arch: this.hexConfig.get('arch'),
-        hive: this.mmcConfig.hive,
-        hive_token: this.hexConfig.get('hive.token'),
-        firmware: this.mmcConfig.firmware,
-        version: this.mmcConfig.version
+    var defer = Q.defer();
+
+    consul.kv.get('hex', function(err, data) {
+        if (err) return defer.reject(err);
+
+        if (!data) return defer.resolve({});
+
+        defer.resolve(JSON.parse(data.Value));
     });
+
+    return defer.promise;
 };
 
 module.exports = SettingsService;

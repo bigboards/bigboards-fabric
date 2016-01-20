@@ -3,7 +3,7 @@ var Q = require('q'),
 
 var TaskUtils = require('../../../../utils/task-utils');
 
-module.exports = function(configuration, services) {
+module.exports = function() {
     return {
         code: 'halt',
         description: 'prepare the hex for shutdown',
