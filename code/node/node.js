@@ -11,9 +11,13 @@ var logger = log4js.getLogger('node');
 
 module.exports = {
     container: {
+        pull: pullContainerImage,
         create: createContainer,
-        remove: removeContainer,
-        removeAll: removeAll,
+        remove: {
+            all: removeAll,
+            byId: removeContainerById,
+            byName: removeContainerByName
+        },
         start: startContainer,
         stop: stopContainer
     },
@@ -28,49 +32,56 @@ module.exports = {
 // == Containers
 // ====================================================================================================================
 
-function createContainer(id, definition) {
+function pullContainerImage(definition) {
+    var image = definition.Image;
+    if (definition.ArchitectureAware) image += '-' + device.architecture;
+
+    // -- check if a repo tag has been provided. if not, we will pull the latest tag
+    if (image.indexOf(':') == -1) image += ':latest';
+
+    logger.info('Downloading container image ' + image);
+    return du.image.pull(image)
+        .then(function(stream) {
+            var defer = Q.defer();
+
+            var error = null;
+
+            stream.on('data', function (chunk) {
+                var obj = JSON.parse(chunk.toString('utf8'));
+
+                if (obj.errorDetail) {
+                    error = new Error(obj.errorDetail.message);
+                } else if (obj.status) {
+                    defer.notify(obj);
+                }
+            });
+
+            stream.on('end', function () {
+                if (error) defer.reject(error);
+                else defer.resolve(true);
+            });
+
+            return defer.promise;
+        });
+}
+
+function createContainer(definition) {
     if (definition.ArchitectureAware) definition.Image += '-' + device.architecture;
 
     // -- check if the container already exists
-    return du.container.get(id).then(function(container) {
-        if (! container) {
-            logger.info('Creating container ' + id + 'as ' + JSON.stringify(definition));
-            return du.image.pull(definition.Image)
-                .then(function(stream) {
-                    var defer = Q.defer();
-
-                    stream.on('data', function (chunk) {
-                        logger.debug(chunk.toString('utf8'));
-                    });
-
-                    stream.on('end', function () {
-                        logger.info('Pulled the ' + definition.Image + ' image');
-
-                        defer.resolve(du.container.create(definition));
-                    });
-
-                    return defer.promise;
-                });
-        } else {
-            return Q();
-        }
-    });
+    return du.container.create(definition);
 }
 
 function removeAll() {
     return du.container.destroy.all({ force: true });
 }
 
-function removeContainer(id) {
-    return du.container.get(id)
-        .then(function(container) {
-            if (container) {
-                logger.info('Removing container ' + id);
-                return  du.container.destroy.byId(id, { force: true });
-            } else {
-                return Q();
-            }
-        });
+function removeContainerById(id) {
+    return du.container.destroy.byId(id, { force: true });
+}
+
+function removeContainerByName(name) {
+    return  du.container.destroy.byId(name, { force: true });
 }
 
 function startContainer(id) {
@@ -95,9 +106,7 @@ function stopContainer(id) {
 // ====================================================================================================================
 
 function provisionResource(definition) {
-    logger.warn('looking for templates at: ' + definition.consulPath);
     return kv.list(definition.consulPath).then(function(templateKeys) {
-        logger.warn('templates: ' + JSON.stringify(templateKeys));
         var promises = [];
 
         templateKeys.forEach(function(templateKey) {

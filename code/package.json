@@ -10,6 +10,7 @@
     "bitbucket-rest": "0.0.1",
     "consul": "^0.23.0",
     "cors": "^2.5.2",
+    "deasync": "^0.1.4",
     "deepcopy": "^0.5.0",
     "diskusage": "^0.1.4",
     "dockerode": "^2.2.9",
@@ -61,7 +62,8 @@
     "require-directory": "^2.0.0",
     "should": "^4.0.4",
     "sinon": "~1.7.3",
-    "tmp": "0.0.24"
+    "tmp": "0.0.24",
+    "unit.js": "^2.0.0"
   },
   "scripts": {
     "start": "node server.js"

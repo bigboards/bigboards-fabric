@@ -20,7 +20,11 @@ module.exports = {
     },
     container: {
         exists: containerExists,
-        get: getContainer,
+        detail: containerDetail,
+        get: {
+            byName: getContainer,
+            byId: getContainerById
+        },
         list: listContainers,
         create: createContainer,
         destroy: {
@@ -70,6 +74,10 @@ function getContainer(tag) {
     return defer.promise;
 }
 
+function getContainerById(id) {
+    return Q(docker.getContainer(id));
+}
+
 function listContainers(options) {
     var defer = Q.defer();
 
@@ -86,7 +94,7 @@ function createContainer(options) {
     log.debug("Creating the docker container from image " + options.Image);
 
     docker.createContainer(options, function (err, res) {
-        return (err) ? defer.reject(err) : defer.resolve(res.Id);
+        return (err) ? defer.reject(err) : defer.resolve(res.id);
     });
 
     return defer.promise;
@@ -157,6 +165,16 @@ function stopContainerById(id) {
     var container = docker.getContainer(id);
 
     return stopContainer(container);
+}
+
+function containerDetail(container) {
+    var defer = Q.defer();
+
+    container.inspect(function (err, res) {
+        return (err) ? defer.reject(err) : defer.resolve(res);
+    });
+
+    return defer.promise;
 }
 
 function checkContainer(container) {
