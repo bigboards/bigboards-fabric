@@ -13,18 +13,24 @@ module.exports = {
     },
     environments: {
         development: {
+            sudo: true,
+            nic: "wlp2s0",
             firmware: "v1.3",
             version: "1.3.0",
             is_dev: true,
             is_prod: false,
             port: process.env.PORT || 7000,
             host: os.hostname(),
+            prefix: {
+                resources: 'resources'
+            },
             file: {
                 hosts: fsu.absolute('local/root/hosts'),
                 registry: fsu.absolute('local/registries.yml'),
                 hex: fsu.absolute('local/hex.yml')
             },
             dir: {
+                data: fsu.absolute('local/data'),
                 root: fsu.absolute('local/root'),
                 tints: fsu.absolute('local/tints.d'),
                 tasks: fsu.absolute('src/main/server/ansible'),
@@ -43,18 +49,24 @@ module.exports = {
             }
         },
         production: {
+            sudo: true,
+            nic: "wlp2s0",
             firmware: "v1.3",
             version: "1.3.0",
             is_dev: false,
             is_prod: true,
             port: process.env.PORT || 7000,
             host: os.hostname(),
+            prefix: {
+                resources: 'resources'
+            },
             file: {
                 hosts: '/etc/ansible/hosts',
                 registry: '/etc/bigboards/registries.yml',
                 hex: '/etc/bigboards/hex.yml'
             },
             dir: {
+                data: '/data',
                 root: '/opt/bb',
                 tints: '/opt/bb/tints.d',
                 tasks: '/opt/bb/runtimes/bigboards-mmc/server/ansible',

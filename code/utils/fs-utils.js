@@ -2,34 +2,65 @@ var Q = require('q'),
     fs = require('fs'),
     yaml = require("js-yaml"),
     ini = require('ini'),
+    swig = require('swig'),
+    log4js = require('log4js'),
     mkdirp = require('mkdirp');
+
+var log = log4js.getLogger();
+
+var renderer = new swig.Swig({
+    varControls: ['[[', ']]'],
+    tagControls: ['[%', '%]'],
+    cmtControls: ['[#', '#]'],
+    locals: {
+        isRelativePath: function(path) {
+            return path.indexOf('/') != 0;
+        },
+        startsWith: function(str, prefix) {
+            return str.indexOf(prefix) != 0;
+        },
+        isFalsy: function(value) {
+            if (value == 0) return true;
+            if (value == false) return true;
+            if (value == "false") return true;
+            if (value == {}) return true;
+            if (value == "") return true;
+            if (value == null) return true;
+            if (value == undefined) return true;
+
+            return false;
+        },
+        isDirectory: isDirectory,
+        isFile: isFile,
+        parentFileName: parentFileName
+    }
+});
 
 /**********************************************************************************************************************
  ** GENERAL
  *********************************************************************************************************************/
+module.exports.absolute = absolute;
+module.exports.exists = exists;
+module.exports.fileName = fileName;
+module.exports.parentFileName = parentFileName;
+module.exports.mkdir = mkdir;
+module.exports.isDirectory = isDirectory;
+module.exports.isFile = isFile;
+module.exports.rmdir = rmdir;
+module.exports.readDir = readDir;
 
-module.exports.absolute = function(path) {
+function absolute(path) {
     var p = path;
     if (p.indexOf('/') != 0) p = '/' + p;
 
     return process.cwd() + p;
-};
+}
 
-module.exports.exists = function(file) {
-    var deferred = Q.defer();
+function exists(path) {
+    return  fs.existsSync(path);
+}
 
-    fs.exists(file, function(exists) {
-        try {
-            return deferred.resolve(exists);
-        } catch (ex) {
-            return deferred.reject(ex)
-        }
-    });
-
-    return deferred.promise;
-};
-
-module.exports.fileName = function(path) {
+function fileName(path) {
     if (path) {
         var start = path.lastIndexOf("/")+1;
         var end = path.length;
@@ -37,187 +68,169 @@ module.exports.fileName = function(path) {
     }
 
     return undefined;
-};
+}
+
+function parentFileName(path) {
+    var idx = path.lastIndexOf('/');
+    return (idx == -1) ? path : path.substring(0, idx);
+}
 
 /**********************************************************************************************************************
  ** DIRECTORIES
  *********************************************************************************************************************/
-module.exports.readDir = function(dir) {
-    var deferred = Q.defer();
+function readDir(path) {
+    return fs.readdirSync(path);
+}
 
-    fs.readdir(dir, function(err, data) {
-        if (err) return deferred.reject(err);
+function mkdir(path) {
+    return mkdirp.sync(path);
+}
 
-        try {
-            return deferred.resolve(data);
-        } catch (ex) {
-            return deferred.reject(ex)
-        }
-    });
-
-    return deferred.promise;
-};
-
-module.exports.mkdir = function(dir) {
-    var deferred = Q.defer();
-
-    mkdirp(dir, function(err, data) {
-        if (err) return deferred.reject(err);
-
-        try {
-            return deferred.resolve(data);
-        } catch (ex) {
-            return deferred.reject(ex)
-        }
-    });
-
-    return deferred.promise;
-};
-
-module.exports.rmdir = function(dir) {
-    deleteFolderRecursive(dir);
-
-    return Q(dir);
-};
-var deleteFolderRecursive = function(path) {
-    if( fs.existsSync(path) ) {
-        fs.readdirSync(path).forEach(function(file,index){
-            var curPath = path + "/" + file;
-            if(fs.lstatSync(curPath).isDirectory()) { // recurse
-                deleteFolderRecursive(curPath);
-            } else { // delete file
-                fs.unlinkSync(curPath);
-            }
-        });
-        fs.rmdirSync(path);
+function isReadable(path) {
+    try {
+        fs.accessSync(path, fs.R_OK);
+        return true;
+    } catch (err) {
+        return false;
     }
-};
+}
 
+function isWritable(path) {
+    try {
+        fs.accessSync(path, fs.W_OK);
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
+function isDirectory(path) {
+    return fs.statSync(path).isDirectory();
+}
+
+function isFile(path) {
+    return fs.statSync(path).isFile();
+}
+
+function rmdir(path) {
+    var deleteFolderRecursive = function(path) {
+        if( fs.existsSync(path) ) {
+            fs.readdirSync(path).forEach(function(file,index){
+                var curPath = path + "/" + file;
+                if(fs.lstatSync(curPath).isDirectory()) { // recurse
+                    deleteFolderRecursive(curPath);
+                } else { // delete file
+                    fs.unlinkSync(curPath);
+                }
+            });
+            fs.rmdirSync(path);
+        }
+    };
+
+    return deleteFolderRecursive(path);
+}
+
+/**********************************************************************************************************************
+ ** TEMPLATING
+ *********************************************************************************************************************/
+
+module.exports.generateDir = generateDir;
+module.exports.generateFile = generateFile;
+module.exports.generateString = generateString;
+
+function generateString(source, targetPath, variables) {
+    var content = renderer.render(source, variables);
+
+    if (!content || content == "") {
+        log.warn('No content to be written!')
+    } else {
+        var parentPath = targetPath.substring(0, targetPath.lastIndexOf('/'));
+        if (! exists(parentPath)) {
+            log.debug('Creating the parent path ' + parentPath);
+            mkdir(parentPath);
+        }
+        writeFile(targetPath, content);
+    }
+}
+
+function generateFile(templatePath, targetPath, variables) {
+    log.info('Generating ' + templatePath + ' to ' + targetPath);
+    var content = renderer.renderFile(templatePath, variables);
+
+    if (!content || content == "") {
+        log.warn('No content to be written!')
+    } else {
+        writeFile(targetPath, content);
+    }
+}
+
+function generateDir(pathContainingTemplates, targetPath, variables) {
+    log.info('Generating directory ' + pathContainingTemplates + ' to ' + targetPath);
+
+    var dirContents = readDir(pathContainingTemplates);
+    dirContents.forEach(function(child) {
+        if (isDirectory(pathContainingTemplates + '/' + child)) {
+            // -- also create the directory in the target path
+            mkdir(targetPath + '/' + child);
+            generateDir(pathContainingTemplates + '/' + child, targetPath + '/' + child, variables);
+        } else {
+            generateFile(pathContainingTemplates + '/' + child, targetPath + '/' + child, variables);
+        }
+    });
+}
 
 /**********************************************************************************************************************
  ** PLAIN FILES
  *********************************************************************************************************************/
+module.exports.readFile = readFile;
+module.exports.writeFile = writeFile;
 
-module.exports.readFile = function(file) {
-    var deferred = Q.defer();
+function readFile(file) {
+    return fs.readFileSync(file, 'utf8');
+}
 
-    fs.readFile(file, {encoding: 'utf8'}, function(err, data) {
-        if (err) return deferred.reject(err);
-
-        try {
-            return deferred.resolve(data);
-        } catch (ex) {
-            return deferred.reject(ex)
-        }
-    });
-
-    return deferred.promise;
-};
-
-module.exports.readFileSync = function(file) {
-    return fs.readFileSync(file, {encoding: 'utf8'});
-};
-module.exports.readFileAtOnce = module.exports.readFileSync;
-
-module.exports.writeFileSync = function(file, content) {
+function writeFile(file, content) {
     return fs.writeFileSync(file, content, 'utf8');
-};
+}
 
 /**********************************************************************************************************************
  ** YAML FILES
  *********************************************************************************************************************/
+module.exports.readYamlFile = readYamlFile;
+module.exports.writeYamlFile = writeYamlFile;
 
-module.exports.readYamlFile = function(file) {
-    return this
-        .readFile(file)
-        .then(function(content) {
-            return yaml.safeLoad(content);
-        });
-};
+function readYamlFile(file) {
+    return yaml.safeLoad(readFile(file));
+}
 
-module.exports.readYamlFileSync = function(file) {
-    return yaml.safeLoad(this.readFileSync(file));
-};
-
-module.exports.writeYamlFileSync = function(file, obj) {
-    return this.writeFileSync(file, yaml.safeDump(obj));
-};
+function writeYamlFile(file, obj) {
+    return writeFile(file, yaml.safeDump(obj));
+}
 
 /**********************************************************************************************************************
  ** JSON FILES
  *********************************************************************************************************************/
+module.exports.readJsonFile = readJsonFile;
+module.exports.writeJsonFile = writeJsonFile;
 
-module.exports.readJsonFileSync = function(file) {
-    return JSON.parse(this.readFileSync(file));
-};
+function readJsonFile(file) {
+    return JSON.parse(readFile(file));
+}
 
-module.exports.readJsonFile = function(file) {
-    return this
-        .readFile(file)
-        .then(function(content) {
-            return JSON.parse(content);
-        });
-};
-
-module.exports.writeJsonFileSync = function(path, obj) {
-    this.writeFileSync(path, JSON.stringify(obj));
-};
-
-module.exports.writeJsonFile = function(path, obj) {
-    var defer = Q.defer();
-
-    try {
-        fs.writeFile(path, JSON.stringify(obj), function (err) {
-            return (err) ? defer.reject(err) : defer.resolve(path);
-        });
-    } catch (error) {
-        defer.reject(error);
-    }
-
-    return defer.promise;
-};
-
-module.exports.jsonFile = module.exports.writeJsonFile;
+function writeJsonFile(path, obj) {
+    writeFile(path, JSON.stringify(obj, null, '\t'));
+}
 
 /**********************************************************************************************************************
  ** INI FILES
  *********************************************************************************************************************/
-module.exports.readIniFileSync = function(file) {
-    return ini.parse(this.readFileSync(file));
-};
+module.exports.readIniFile = readIniFile;
+module.exports.writeIniFile = writeIniFile;
 
-module.exports.readIniFile = function(file) {
-    return this
-        .readFile(file)
-        .then(function(content) {
-            return ini.parse(content);
-        });
-};
+function readIniFile(file) {
+    return ini.parse(readFile(file));
+}
 
-module.exports.readIniFileSync = function(file) {
-    return this
-        .readFile(file)
-        .then(function(content) {
-            return ini.parse(content);
-        });
-};
-
-module.exports.writeIniFileSync = function(path, obj) {
-    this.writeFileSync(path, ini.stringify(obj, { whitespace: true }));
-};
-
-module.exports.writeIniFile = function(path, obj) {
-    var defer = Q.defer();
-
-    try {
-        fs.writeFile(path, ini.stringify(obj, { whitespace: true }), function (err) {
-            return (err) ? defer.reject(err) : defer.resolve(path);
-        });
-    } catch (error) {
-        defer.reject(error);
-    }
-
-    return defer.promise;
-};
-
-module.exports.iniFile = module.exports.writeIniFile;
+function writeIniFile(path, obj) {
+    writeFile(path, ini.stringify(obj, { whitespace: true }));
+}

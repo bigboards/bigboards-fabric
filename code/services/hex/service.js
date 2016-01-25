@@ -8,6 +8,8 @@ var Q = require('q'),
     https = require('https'),
     auth0 =  require('../../auth0');
 
+
+var tintManager = require('../../tint/tint.manager');
 var consul = require('consul')();
 
 function HexService(mmcConfig, templater, services, consul) {
@@ -23,7 +25,7 @@ function HexService(mmcConfig, templater, services, consul) {
 HexService.prototype.get = function() {
     var defer = Q.defer();
 
-    consul.kv.get('hex', function(err, result) {
+    consul.kv.get.key('hex', function(err, result) {
         if (err) return defer.reject(err);
         defer.resolve((result) ? JSON.parse(result.Value) : {});
     });
@@ -107,19 +109,18 @@ HexService.prototype.listTints = function() {
     var self = this;
     var metafile = this.mmcConfig.dir.tints + '/meta.json';
 
-    return fsu.exists(metafile).then(function(exists) {
-        if (exists) {
-            return fsu.readJsonFile(metafile).then(function(metadata) {
-                return self.listNodes().then(function(nodes) {
-                    var scope = self.templater.createScope(nodes);
+    var exists = fsu.exists(metafile);
+    if (exists) {
+        return Q(fsu.readJsonFile(metafile).then(function(metadata) {
+            return self.listNodes().then(function(nodes) {
+                var scope = self.templater.createScope(nodes);
 
-                    return self.templater.templateWithScope(metadata, scope);
-                });
+                return self.templater.templateWithScope(metadata, scope);
             });
-        } else {
-            return {};
-        }
-    });
+        }));
+    } else {
+        return Q({});
+    }
 };
 
 HexService.prototype.getTint = function(type, owner, slug) {
@@ -156,50 +157,12 @@ HexService.prototype.removeTint = function(type, owner, slug) {
     var self = this;
 
     return this.getTint(type, owner, slug).then(function(tint) {
-        return self.services.task.invoke(type + '_uninstall', { tint: tint });
+        return tintManager.uninstall(tint);
     });
 };
 
 HexService.prototype.installTint = function(tint) {
-    var self = this;
-
-    var id = tu.toTintId(tint.type, tint.owner, tint.slug);
-
-    return this.listTints().then(function(installedTints) {
-        return self.services.task.current().then(function(currentTask) {
-            if (currentTask) {
-                throw new Errors.TaskAlreadyStartedError('An task is already running. Wait for it to complete before installing the tint');
-            } else {
-                for (var param in installedTints) {
-                    if (!installedTints.hasOwnProperty(param)) continue;
-
-                    // -- ignore the same tint if it is already installed. That would allow us to reinstall it.
-                    if (param == id) continue;
-
-                    // -- ignore if the tint to install is not a stack. Only stacks can be installed one at the time
-                    if (tint.type != 'stack') continue;
-
-                    // -- ignore stacks
-                    if (installedTints[param].type != 'stack') continue;
-
-                    throw new Errors.TintInstallationError('A stack tint has already been installed. Remove it first before trying to install a new one.');
-                }
-
-                return self.services.task.invoke(tint.type + '_install', { tint: tint });
-            }
-        });
-    });
+    return tintManager.install(tint);
 };
-
-function indexForNode(nodeList, node) {
-    // -- discover the index of the node
-    for (var idx in nodeList) {
-        if (node.name == nodeList[idx].name) {
-            return idx;
-        }
-    }
-
-    return -1;
-}
 
 module.exports = HexService;

@@ -30,7 +30,7 @@ libraryModule.controller('LibraryItemViewController', ['$scope', '$location', 't
         Hex.install(
             { tint: $scope.tint },
             function(attempt) {
-                $location.path('/tasks/' + attempt.task.code + '/attempts/' + attempt.attempt + '/output');
+                //$location.path('/tasks/' + attempt.task.code + '/attempts/' + attempt.attempt + '/output');
             },
             ApiFeedback.onError()
         );

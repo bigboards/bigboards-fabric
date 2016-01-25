@@ -3,7 +3,7 @@ var Q = require('q'),
     log = require('winston'),
     Errors = require('../../errors');
 
-var kv = require('../../kv');
+var kv = require('../../store/kv');
 
 function RegistryService(mmcConfig) {
     this.mmcConfig = mmcConfig;
@@ -16,7 +16,7 @@ RegistryService.prototype.getRegistries = function() {
 RegistryService.prototype.getRegistry = function(name, sync) {
     if (! name) throw new Errors.IllegalParameterError("No registry name provided.");
 
-    return kv.get('registries/' + name);
+    return kv.get.key('registries/' + name);
 };
 
 RegistryService.prototype.addRegistry = function(registryData) {
@@ -39,7 +39,7 @@ RegistryService.prototype.updateRegistry = function(name, registryData) {
 };
 
 RegistryService.prototype.removeRegistry = function(name) {
-    return kv.remove('registries/' + name);
+    return kv.remove.key('registries/' + name);
 };
 
 module.exports = RegistryService;

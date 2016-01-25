@@ -13,16 +13,9 @@ function SettingsService(mmcConfig) {
  * Hex
  *********************************************************************************************************************/
 SettingsService.prototype.getHexSettings = function() {
-    return this.getClientSettings();
-};
-
-/*********************************************************************************************************************
- * Client
- *********************************************************************************************************************/
-SettingsService.prototype.getClientSettings = function() {
     var defer = Q.defer();
 
-    consul.kv.get('hex', function(err, data) {
+    consul.kv.get.key('hex', function(err, data) {
         if (err) return defer.reject(err);
 
         if (!data) return defer.resolve({});
@@ -31,6 +24,15 @@ SettingsService.prototype.getClientSettings = function() {
     });
 
     return defer.promise;
+};
+
+/*********************************************************************************************************************
+ * Client
+ *********************************************************************************************************************/
+SettingsService.prototype.getClientSettings = function() {
+    return Q({
+        hive: this.mmcConfig.hive
+    })
 };
 
 module.exports = SettingsService;

@@ -2,3 +2,4 @@
 node_modules
 dist
 code/ui/bower_components
+code/local

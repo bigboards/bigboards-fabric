@@ -7,27 +7,28 @@ var express = require('express'),
     http = require('http'),
     os = require('os'),
     path = require('path'),
-    Container = require('./container'),
     Services = require('./services'),
     winston = require('winston'),
     Q = require('q'),
-    Templater = require('./utils/templater'),
-    KV = require('./kv'),
-    ObjStore = require('./obj');
-var disk = require('diskusage');
+    Templater = require('./utils/templater');
 
-mmcConfig = initializeMMCConfiguration();
+var Cluster = require('./cluster');
+
+
+var store = {
+    kv: require('./store/kv'),
+    session: require('./store/session')
+};
+
+var mmcConfig = initializeMMCConfiguration();
 
 var consul = require('consul')();
 
-// -- create a session on consul
-registerNode('wlp2s0', '/tmp').then(function(sessionId) {
-    winston.info('Consul session created with id ' + sessionId);
-
+Cluster.start(mmcConfig.port).then(function() {
     var app = initializeExpress();
     var server = initializeHttpServer(app);
 
-// -- get the runtime environment
+    // -- get the runtime environment
     mmcConfig.environment = app.get('env');
 
     var services = initializeServices(mmcConfig, app);
@@ -47,67 +48,6 @@ registerNode('wlp2s0', '/tmp').then(function(sessionId) {
 process.on('uncaughtException', function(err) {
     handleError(err);
 });
-
-function registerNode(nic, dataDir) {
-    var defer = Q.defer();
-
-    consul.session.create({behaviour: 'delete', name: 'Fabric'}, function(err, result) {
-        if (err) return defer.reject(err);
-
-        var sessionId = result.ID;
-
-        // -- check if the nic is available
-        var nics = os.networkInterfaces();
-        if (! nics[nic]) {
-            console.log('Unable to find details about the ' + nic + ' network interface. Does it have an ip?');
-            return 1;
-        }
-
-        var data = {
-            deviceId: null,
-            hostname: os.hostname(),
-            arch: getArch(),
-            memory: os.totalmem(),
-            cpus: [],
-            disks: [],
-            ipv4: null,
-            mac: null
-        };
-
-        // -- read the disk data
-        Q.all([
-            getDiskInfo('/'),
-            getDiskInfo(dataDir)
-        ]).then(function(disks) {
-            data.disks.push({ type: 'os', mount: '/', size: disks[0].total});
-            data.disks.push({ type: 'os', mount: '/', size: disks[1].total});
-        }).then(function() {
-            // -- format the cpu's
-            os.cpus().forEach(function (cpu) {
-                data.cpus.push(cpu['model']);
-            });
-
-            nics[nic].forEach(function (address) {
-                if (address['family'] == 'IPv4') {
-                    data.ipv4 = address.address;
-                    data.mac = address.mac;
-                    data.deviceId = address.mac.replace(/\:/g, '').toLowerCase()
-                }
-            });
-
-            consul.kv.set({
-                key: 'nodes/' + data.deviceId,
-                value: JSON.stringify(data, null, 2),
-                acquire: sessionId
-            }, function(err, result) {
-                if (err) return defer.reject(err);
-                return defer.resolve(sessionId);
-            });
-        });
-    });
-
-    return defer.promise;
-}
 
 function initializeMMCConfiguration() {
     var config = require('./config').lookupEnvironment();
@@ -209,22 +149,3 @@ function handleError(error) {
     }
 }
 
-function getArch() {
-    var arch = os.arch();
-
-    if (arch == 'x64') return 'x86_64';
-    if (arch == 'arm') return 'armv7l';
-    if (arch == 'ia32') return 'x86';
-    return 'unknown';
-}
-
-function getDiskInfo(path) {
-    var defer = Q.defer();
-
-    disk.check(path, function(err, disk) {
-        if (err) return defer.reject(err);
-        return defer.resolve(disk);
-    });
-
-    return defer.promise;
-}

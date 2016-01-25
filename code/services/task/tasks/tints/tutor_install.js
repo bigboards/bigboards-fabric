@@ -95,7 +95,7 @@ function generateTutorialContentList(tintPath, toc) {
 
     promises.push(FsUtils.jsonFile(TintUtils.toTutorialTocPath(tintPath + '/work'), toc));
 
-    return Q.allSettled(promises).then(function() {
+    return Q.all(promises).then(function() {
         winston.info('Tutorial Content Generated');
     });
 }
