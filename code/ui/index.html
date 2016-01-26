@@ -35,9 +35,9 @@
         <md-button id="main" class="menu" ng-click="ac.toggleList()" aria-label="Show Sidebar">
             <md-icon md-font-icon="lnr-menu" class="lnr" ></md-icon>
         </md-button>
-        <h3 class="md-display-1" flex>BigBoards Fabric</h3>
+        <h3 class="md-display-1" flex>{{ ac.page.title() }}</h3>
 
-        <md-button aria-label="Navigate to the main page">
+        <md-button aria-label="Navigate to the main page" ng-click="ac.goto('/nodes')">
             <md-icon md-font-icon="lnr-home" class="lnr" ></md-icon>
         </md-button>
         <md-button aria-label="Navigate to the library">
@@ -73,6 +73,7 @@
 
 <script src="app/core/application.controller.js"></script>
 <script src="app/core/node.service.js"></script>
+<script src="app/core/page.service.js"></script>
 <script src="app/core/bytes.filter.js"></script>
 <script src="app/core/terminal.directive.js"></script>
 
