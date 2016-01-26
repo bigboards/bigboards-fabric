@@ -53,13 +53,15 @@ function updated(tint) {
 
 function removed(tint, key) {
     logger.debug('removing containers and resources from the nodes');
-    return Q.all([
-        ContainerDispatcher.remove.byTint(tint),
-        ResourceDispatcher.remove.byTint(tint)
-    ]).then(function() {
-        logger.debug('removing the tint from the consul store');
-        kv.remove.prefix(key);
-    });
+    return ContainerDispatcher.remove.byTint(tint)
+        .then(function() {
+            return ResourceDispatcher.remove.byTint(tint);
+        }).then(function() {
+            return kv.remove.prefix('resources')
+        }).then(function() {
+            logger.debug('removing the tint from the consul store');
+            kv.remove.prefix(key);
+        });
 }
 
 function cleanup() {

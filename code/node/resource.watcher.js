@@ -27,7 +27,7 @@ function removed(resourceDefinition, key) {
     return node.resource.remove(resourceDefinition)
         .then(function() {
             logger.debug('Removing the resource ' + resourceDefinition.fsPath + ' from consul');
-            return kv.remove.key(key);
+            return kv.remove.prefix(key);
         });
 }
 
@@ -37,7 +37,5 @@ function cleanup() {
         .then(function(data) {
             logger.debug('Removing all resources from consul');
             return kv.remove.prefix('nodes/' + device.id + '/resources');
-        }, function(error) {
-            logger.debug("Error occured! " + error);
         });
 }

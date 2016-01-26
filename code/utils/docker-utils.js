@@ -45,9 +45,10 @@ module.exports = {
 };
 
 function containerExists(name) {
-    return du.container.list({all: true, filters: { label: [name]}}).then(function(containers) {
-        return (containers.length == 1);
-    });
+    return listContainers({all: true, filters: { label: [name]}})
+        .then(function(containers) {
+            return (containers.length == 1);
+        });
 }
 
 function pullImage(image, options) {

@@ -160,7 +160,8 @@ function removeTintResources(tint) {
 }
 
 function removeTintResourcesOnNode(tint, node) {
-    return kv.multiflag('nodes/' + node + '/resources', 999);
+    logger.info('Flagging tint resources for removal');
+    return kv.multiflag('nodes/' + node.id + '/resources/' + tu.id(tint), 999);
 }
 
 function registerResourceOnNode(tint, node, resourceName, resourceType, resourceFsPath, resourceScope) {

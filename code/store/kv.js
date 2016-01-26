@@ -123,7 +123,8 @@ function setFlagForAll(key, flag) {
         if (err) return promises.push(Q.reject(err));
 
         data.forEach(function(subKey) {
-            promises.push(setFlag(key + '/' + subKey, flag));
+            logger.debug('Flagging consul:' + subKey + ' to ' + flag);
+            promises.push(setFlag(subKey, flag));
         });
     });
 

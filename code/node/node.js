@@ -81,7 +81,11 @@ function removeContainerById(id) {
 }
 
 function removeContainerByName(name) {
-    return  du.container.destroy.byId(name, { force: true });
+    return du.container.exists(name).then(function(exists) {
+        if (exists) {
+            return du.container.destroy.byId(name, { force: true });
+        }
+    });
 }
 
 function startContainer(id) {
