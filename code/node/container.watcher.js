@@ -8,10 +8,8 @@ var node = require('./node');
 module.exports = {
     created: created,
     ready: ready,
-    updated: updated,
     removed: removed,
-    cleanup: cleanup,
-    error: error
+    cleanup: cleanup
 };
 
 function ready(container) {
@@ -19,35 +17,31 @@ function ready(container) {
 }
 
 function created(container, key) {
-    logger.debug('Creating container ' + container.Hostname);
-    return node.container.create(container.Hostname, container)
+    logger.debug('Creating container ' + container.name);
+
+    return node.container.pull(container)
         .then(function() {
-            logger.debug('Flagging the container ' + container.Hostname + ' as ready');
+            return node.container.create(container);
+        }).then(function() {
+            logger.debug('Flagging the container ' + container.name + ' as ready');
             return kv.flag(key, 2);
         });
 }
 
-function updated(container, key) {
-}
-
 function removed(container, key) {
-    logger.debug('Removing container ' + container.Hostname);
-    return node.container.remove(container.Hostname)
+    logger.debug('Removing container ' + container.name);
+    return node.container.remove.byName(container.name)
         .then(function() {
-            logger.debug('Removing the container ' + container.Hostname + ' from consul');
+            logger.debug('Removing the container ' + container.name + ' from consul');
             return kv.remove.key(key);
         });
 }
 
 function cleanup() {
     logger.debug('Removing all containers');
-    return node.container.removeAll()
+    return node.container.remove.all()
         .then(function() {
             logger.debug('Removing all containers from consul');
             return kv.remove.prefix('nodes/' + device.id + '/containers');
         });
-}
-
-function error(err) {
-
 }

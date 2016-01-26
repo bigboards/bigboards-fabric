@@ -85,11 +85,29 @@ function removeContainerByName(name) {
 }
 
 function startContainer(id) {
-    return du.container.start.byId(id);
+    return du.container.status(id).then(function(status) {
+        logger.debug('Container ' + id + ' Status: ' + JSON.stringify(status));
+
+        if (!status.Running) {
+            return du.container.start.byId(id);
+        } else {
+            logger.warn('Not starting container ' + id + ' because it is already running');
+            return false;
+        }
+    });
 }
 
 function stopContainer(id) {
-    return du.container.stop.byId(id);
+    return du.container.status(id).then(function(status) {
+        logger.debug('Container ' + id + ' Status: ' + JSON.stringify(status));
+
+        if (status.Running) {
+            return du.container.stop.byId(id);
+        } else {
+            logger.warn('Not stopping container ' + id + ' because it is not running');
+            return false;
+        }
+    });
 }
 
 // ====================================================================================================================

@@ -1,5 +1,6 @@
 module.exports =  function(definition) {
     var result = {
+        name: definition.name,
         "Image": definition.image,
         "Hostname": definition.name,
         "ArchitectureAware": definition.architectureAware,
@@ -7,6 +8,8 @@ module.exports =  function(definition) {
             PublishAllPorts: true
         }
     };
+
+    if (result.Image.indexOf('bigboards') == 0) result.ArchitectureAware = true;
 
     if (definition.registry) result.Image = definition.registry + '/' + result.Image;
     if (definition.networking) result.HostConfig.NetworkMode = definition.networking;

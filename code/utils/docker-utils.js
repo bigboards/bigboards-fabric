@@ -177,11 +177,17 @@ function containerDetail(container) {
     return defer.promise;
 }
 
-function checkContainer(container) {
+function checkContainer(id) {
+    var container = docker.getContainer(id);
+
     var defer = Q.defer();
 
     container.inspect(function (err, res) {
-        return (err) ? defer.reject(err) : defer.resolve(res.State.Status);
+        if (err) {
+            return defer.reject(err);
+        }
+
+        return defer.resolve(res.State);
     });
 
     return defer.promise;
