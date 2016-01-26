@@ -13,3 +13,17 @@ body {
 md-content {
     background-color: transparent;
 }
+
+md-list .lnr {
+    line-height: 1.8;
+    background-color: transparent;
+}
+
+md-list .lnr.passing { color: green; }
+md-list .lnr.warning { color: orange; }
+md-list .lnr.critical { color: red; }
+
+.md-whiteframe-z1 { background-color: white; }
+.md-whiteframe-z2 { background-color: white; }
+.md-whiteframe-z3 { background-color: white; }
+.md-whiteframe-z4 { background-color: white; }

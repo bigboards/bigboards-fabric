@@ -1,5 +1,5 @@
-<md-content layout="row" layout-padding flex>
-    <md-card ng-repeat="node in vm.nodes" style="max-width: 440px; min-width: 440px;">
+<md-content class="view-container" layout="row" layout-padding flex>
+    <md-card ng-repeat="node in vm.nodes" style="max-width: 440px; min-width: 440px;" ng-click="vm.goto(node)">
         <md-card-header>
             <md-card-avatar>
                 <md-icon class="lnr" md-font-icon="lnr-chip" ng-class="node.health" ></md-icon>

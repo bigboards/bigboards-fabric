@@ -10,7 +10,8 @@ var express = require('express'),
     Services = require('./services'),
     winston = require('winston'),
     Q = require('q'),
-    Templater = require('./utils/templater');
+    Templater = require('./utils/templater'),
+    term = require('term.js');
 
 var Cluster = require('./cluster');
 
@@ -26,7 +27,10 @@ var consul = require('consul')();
 
 Cluster.start(mmcConfig.port).then(function() {
     var app = initializeExpress();
+    app.use(term.middleware());
+
     var server = initializeHttpServer(app);
+    var io = require('socket.io').listen(server);
 
     // -- get the runtime environment
     mmcConfig.environment = app.get('env');

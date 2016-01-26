@@ -38,6 +38,7 @@
     "socket.io-client": "^1.0.6",
     "string": "~1.8.0",
     "swig": "^1.4.2",
+    "term.js": "0.0.7",
     "underscore": "^1.5.2",
     "util": "~0.10.2",
     "winston": "^0.7.3"

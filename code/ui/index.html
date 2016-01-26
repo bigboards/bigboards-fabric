@@ -30,7 +30,7 @@
 </md-sidenav>
 
 
-<div flex layout="column" tabIndex="-1" role="main" class="md-whiteframe-z2">
+<div flex layout="column" tabIndex="-1" role="main">
     <md-toolbar layout="row" class="transparent">
         <md-button id="main" class="menu" ng-click="ac.toggleList()" aria-label="Show Sidebar">
             <md-icon md-font-icon="lnr-menu" class="lnr" ></md-icon>
@@ -61,6 +61,9 @@
 <script src="bower_components/angular-resource/angular-resource.min.js"></script>
 <script src="bower_components/angular-material/angular-material.min.js"></script>
 <script src="bower_components/a0-angular-storage/dist/angular-storage.min.js"></script>
+<script src="bower_components/term.js/src/term.js"></script>
+<script src="bower_components/socket.io-client/socket.io.js"></script>
+<script src="bower_components/angular-socket-io/socket.min.js"></script>
 
 
 <script src="app/mmc.js"></script>
@@ -71,10 +74,12 @@
 <script src="app/core/application.controller.js"></script>
 <script src="app/core/node.service.js"></script>
 <script src="app/core/bytes.filter.js"></script>
+<script src="app/core/terminal.directive.js"></script>
 
 <script src="app/node/node.module.js"></script>
 <script src="app/node/node.config.js"></script>
 <script src="app/node/node-list.controller.js"></script>
+<script src="app/node/node-detail.controller.js"></script>
 
 
 <!-- UserVoice - JavaScript SDK (only needed once on a page) -->
