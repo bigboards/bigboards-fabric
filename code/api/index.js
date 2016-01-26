@@ -3,7 +3,8 @@ var API = require('./api-helper');
 var resources = {
     cluster: require('./cluster.resource'),
     node: require('./node.resource'),
-    service: require('./service.resource')
+    service: require('./service.resource'),
+    tint: require('./tint.resource')
 };
 
 module.exports = function(app) {
@@ -14,4 +15,7 @@ module.exports = function(app) {
 
     API.register.get(app, '/v1/cluster/services', resources.service.list);
     API.register.get(app, '/v1/cluster/services/:id', resources.service.get);
+
+    API.register.get(app, '/v1/cluster/tints', resources.tint.list);
+    API.register.get(app, '/v1/cluster/tints/:profileId/:slug', resources.tint.get);
 };
