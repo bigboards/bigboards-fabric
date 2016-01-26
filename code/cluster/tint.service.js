@@ -14,6 +14,7 @@ module.exports = {
 };
 
 function installTint(definition) {
+    // -- todo: make sure a stack tint has not been installed yet
     return kv.set('tints/' + definition.owner + '$' + definition.slug, definition, null, 0);
 }
 

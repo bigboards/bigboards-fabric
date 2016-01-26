@@ -14,6 +14,10 @@ md-content {
     background-color: transparent;
 }
 
+md-sidenav {
+    min-width: 40%;
+}
+
 md-list .lnr {
     line-height: 1.8;
     background-color: transparent;

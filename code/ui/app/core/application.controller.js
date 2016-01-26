@@ -10,7 +10,7 @@ function ApplicationController($mdSidenav, $location, Page) {
     ac.goto = goto;
 
     function toggleList() {
-        $mdSidenav('left').toggle();
+        $mdSidenav('right').toggle();
     }
 
     function goto(path) {

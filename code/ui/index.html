@@ -23,19 +23,23 @@
 </head>
 
 <body ng-cloak layout="row" ng-controller="ApplicationController as ac">
-<md-sidenav class="site-sidenav md-sidenav-left md-whiteframe-z2"
-            md-component-id="left"
-            ng-click="ac.toggleList()" aria-label="Show Sidebar">
+<md-sidenav class="site-sidenav md-sidenav-right md-whiteframe-z2"
+            md-component-id="right"
+            aria-label="Show Settings">
+    <div layout="row" layout-align="start center">
+        <h3 class="m-l-16 md-display-1" flex>Settings</h3>
+        <md-button ng-click="ac.toggleList()" class="md-primary md-icon-button m-r-16">
+            <md-icon md-font-icon="lnr-cross2" class="lnr"></md-icon>
+        </md-button>
+    </div>
 
+    <md-content layout="column" layout-padding ng-include="'app/core/settings.part.html'" ng-controller="SettingsController as sc"></md-content>
 </md-sidenav>
 
 
 <div flex layout="column" tabIndex="-1" role="main">
     <md-toolbar layout="row" class="transparent">
-        <md-button id="main" class="menu" ng-click="ac.toggleList()" aria-label="Show Sidebar">
-            <md-icon md-font-icon="lnr-menu" class="lnr" ></md-icon>
-        </md-button>
-        <h3 class="md-display-1" flex>{{ ac.page.title() }}</h3>
+        <h3 class="m-l-16 md-display-1" flex>{{ ac.page.title() }}</h3>
 
         <md-button aria-label="Navigate to the main page" ng-click="ac.goto('/nodes')">
             <md-icon md-font-icon="lnr-home" class="lnr" ></md-icon>
@@ -43,7 +47,7 @@
         <md-button aria-label="Navigate to the library">
             <md-icon md-font-icon="lnr-drop" class="lnr" ></md-icon>
         </md-button>
-        <md-button aria-label="Navigate to the settings">
+        <md-button aria-label="Navigate to the settings" ng-click="ac.toggleList()">
             <md-icon md-font-icon="lnr-cog" class="lnr" ></md-icon>
         </md-button>
     </md-toolbar>
@@ -72,7 +76,9 @@
 <script src="app/mmc.run.js"></script>
 
 <script src="app/core/application.controller.js"></script>
+<script src="app/core/settings.controller.js"></script>
 <script src="app/core/node.service.js"></script>
+<script src="app/core/settings.service.js"></script>
 <script src="app/core/page.service.js"></script>
 <script src="app/core/bytes.filter.js"></script>
 <script src="app/core/terminal.directive.js"></script>
