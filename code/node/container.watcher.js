@@ -1,5 +1,6 @@
 var device = require('../device/device.manager'),
-    kv = require('../store/kv');
+    kv = require('../store/kv'),
+    services = require('../store/services');
 
 var log4js = require('log4js');
 var logger = log4js.getLogger('watcher.node.container');
@@ -19,13 +20,24 @@ function ready(container) {
 function created(container, key) {
     logger.debug('Creating container ' + container.name);
 
-    return node.container.pull(container)
-        .then(function() {
-            return node.container.create(container);
-        }).then(function() {
-            logger.debug('Flagging the container ' + container.name + ' as ready');
-            return kv.flag(key, 2);
-        });
+    var serviceDescriptor = {
+        name: 'Container ' + container.name,
+        id: 'docker-' + container.name,
+        tags: [ 'docker' ],
+        check: {
+            script: __dirname + '/../../scripts/check_docker_container.sh ' + container.name,
+            interval: '15s'
+        }
+    };
+
+    return services.register(serviceDescriptor).then(function() {
+        return node.container.pull(container);
+    }).then(function() {
+        return node.container.create(container);
+    }).then(function() {
+        logger.debug('Flagging the container ' + container.name + ' as ready');
+        return kv.flag(key, 2);
+    });
 }
 
 function removed(container, key) {
@@ -34,6 +46,8 @@ function removed(container, key) {
         .then(function() {
             logger.debug('Removing the container ' + container.name + ' from consul');
             return kv.remove.key(key);
+        }).then(function() {
+            return services.deregister('docker-' + container.name);
         });
 }
 

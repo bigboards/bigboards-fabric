@@ -138,7 +138,7 @@ function removeResources() {
         var promises = [];
 
         nodes.forEach(function(node) {
-            promises.push(kv.multiflag('nodes/' + node + '/resources', -1));
+            promises.push(kv.multiflag('nodes/' + node + '/resources', 999));
         });
 
         return Q.all(promises);
@@ -160,7 +160,7 @@ function removeTintResources(tint) {
 }
 
 function removeTintResourcesOnNode(tint, node) {
-    return kv.multiflag('nodes/' + node + '/resources', -1);
+    return kv.multiflag('nodes/' + node + '/resources', 999);
 }
 
 function registerResourceOnNode(tint, node, resourceName, resourceType, resourceFsPath, resourceScope) {

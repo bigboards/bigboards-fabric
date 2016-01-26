@@ -13,5 +13,5 @@ function install(tint) {
 
 function uninstall(tint) {
     var tintId = tu.id(tint);
-    return kv.flag('tints/' + tint.type + '/' + tintId, -1);
+    return kv.flag('tints/' + tint.type + '/' + tintId, 999);
 }

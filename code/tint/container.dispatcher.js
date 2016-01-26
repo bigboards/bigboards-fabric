@@ -73,7 +73,7 @@ function removeContainers() {
         var promises = [];
 
         nodes.forEach(function(node) {
-            promises.push(kv.multiflag('nodes/' + node + '/containers', -1));
+            promises.push(kv.multiflag('nodes/' + node + '/containers', 999));
         });
 
         return Q.all(promises);
@@ -111,7 +111,7 @@ function removeContainersForNode(node, containers) {
     var promises = [];
 
     containers.forEach(function (container) {
-        promises.push(kv.set('nodes/' + node.id + '/containers/' + container.name, container, null, -1));
+        promises.push(kv.set('nodes/' + node.id + '/containers/' + container.name, container, null, 999));
     });
 
     return Q.all(promises);

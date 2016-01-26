@@ -62,7 +62,7 @@ function watchChangeHandler(watcher, evtPrefix, data, res) {
                     evt = evtPrefix + '.ready';
                     logger.debug(evtPrefix + ' state changed to READY');
                     break;
-                case -1:
+                case 999:
                     evt = evtPrefix + '.removed';
                     logger.debug(evtPrefix + ' state changed to REMOVED');
                     break;
