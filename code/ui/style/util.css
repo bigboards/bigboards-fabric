@@ -121,3 +121,15 @@
 .selected {
     color: #008888;
 }
+
+.passing {
+    background-color: green;
+}
+
+.warning {
+    background-color: orange;
+}
+
+.critical {
+    background-color: red;
+}

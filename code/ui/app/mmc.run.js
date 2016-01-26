@@ -1,10 +1,7 @@
 angular.module('mmc').run(Run);
 
-Run.$inject = ['$http', 'SettingsService'];
+Run.$inject = ['$http', 'settings'];
 
-function Run($http, SettingsService) {
-    var settings = SettingsService.get.local;
+function Run($http, settings) {
 
-    $http.defaults.headers.common['BB-Firmware'] = settings.firmware;
-    $http.defaults.headers.common['BB-Architecture'] = settings.arch;
 }

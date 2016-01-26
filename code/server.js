@@ -31,11 +31,13 @@ Cluster.start(mmcConfig.port).then(function() {
     // -- get the runtime environment
     mmcConfig.environment = app.get('env');
 
-    var services = initializeServices(mmcConfig, app);
+    //var services = initializeServices(mmcConfig, app);
 
-    services.task.registerDefaultTasks(services);
+    //services.task.registerDefaultTasks(services);
 
-    var io = initializeSocketIO(server, services);
+    //var io = initializeSocketIO(server, services);
+
+    require('./api')(app);
 
     server.listen(app.get('port'), function () {
         winston.info('BigBoards-mmc listening on port ' + app.get('port'));

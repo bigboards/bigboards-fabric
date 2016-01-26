@@ -65,12 +65,16 @@
 
 <script src="app/mmc.js"></script>
 <script src="app/mmc.config.js"></script>
+<script src="app/mmc.settings.js"></script>
 <script src="app/mmc.run.js"></script>
 
 <script src="app/core/application.controller.js"></script>
+<script src="app/core/node.service.js"></script>
+<script src="app/core/bytes.filter.js"></script>
 
-<script src="app/settings/settings.module.js"></script>
-<script src="app/settings/settings.service.js"></script>
+<script src="app/node/node.module.js"></script>
+<script src="app/node/node.config.js"></script>
+<script src="app/node/node-list.controller.js"></script>
 
 
 <!-- UserVoice - JavaScript SDK (only needed once on a page) -->
@@ -86,13 +90,15 @@
         var api = '';
         //var api = 'http://jack.hex.bigboards.io:7000';
 
-        $.getJSON(api + '/api/v1/settings/client', function(data) {
-            data.api = api;
+//        $.getJSON(api + '/api/v1/settings/client', function(data) {
+            var data = {
+                api: api
+            };
 
             sessionStorage.setItem('settings', JSON.stringify(data));
 
             angular.bootstrap(document, ['mmc']);
-        });
+//        });
     });
 </script>
 

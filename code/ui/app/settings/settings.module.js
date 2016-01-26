@@ -1,1 +1,0 @@
-angular.module('bb.mmc.settings', ['angular-storage']);

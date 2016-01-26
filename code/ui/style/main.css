@@ -1,6 +1,15 @@
+body {
+    background-color: #f1f1f1;
+}
+
 
 .bb-background {
     background-image: url('/content/images/hex-bg-alt.svg');
     background-repeat: no-repeat;
     background-position: bottom right;
+    background-color: transparent;
+}
+
+md-content {
+    background-color: transparent;
 }

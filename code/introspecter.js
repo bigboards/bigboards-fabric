@@ -27,11 +27,9 @@ module.exports = function() {
 
     // -- read the disk data
     return Q.all([
-        getDiskInfo('/'),
         getDiskInfo(dataDir)
     ]).then(function(disks) {
-        data.disks.push({ type: 'os', mount: '/', size: disks[0].total});
-        data.disks.push({ type: 'os', mount: '/', size: disks[1].total});
+        data.disks.push({ type: 'data', mount: dataDir, size: disks[0].total});
     }).then(function() {
         // -- format the cpu's
         os.cpus().forEach(function (cpu) {

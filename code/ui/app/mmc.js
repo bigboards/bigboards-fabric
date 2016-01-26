@@ -1,6 +1,7 @@
 var app = angular.module( 'mmc', [
     'ngRoute',
+    'ngResource',
     'ngMaterial',
 
-    'bb.mmc.settings'
+    'mmc.node'
 ]);

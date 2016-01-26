@@ -64,6 +64,7 @@ function getValue(key) {
 
     consul.kv.get(key, function(err, data) {
         if (err) return defer.reject(err);
+        if (! data) return defer.resolve({});
 
         return defer.resolve(JSON.parse(data.Value));
     });
