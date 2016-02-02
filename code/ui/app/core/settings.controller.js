@@ -1,12 +1,18 @@
 angular.module('mmc').controller('SettingsController', SettingsController);
 
-SettingsController.$inject = ['$scope', '$mdSidenav', 'SettingsService'];
+SettingsController.$inject = ['$scope', '$mdSidenav', 'SettingsService', 'LinkService'];
 
-function SettingsController($scope, $mdSidenav, SettingsService) {
+function SettingsController($scope, $mdSidenav, SettingsService, LinkService) {
     var sc = this;
 
     sc.settings = {};
     sc.toggleList = toggleList;
+    sc.link = link;
+    sc.unlink = unlink;
+
+    LinkService.get().then(function(linkData) {
+        sc.linkData = linkData;
+    });
 
     SettingsService.get().then(function(settings) {
         if (! settings) settings = {};
@@ -27,5 +33,15 @@ function SettingsController($scope, $mdSidenav, SettingsService) {
 
     function saveSettings() {
         return SettingsService.set(sc.settings);
+    }
+
+    function link() {
+        LinkService.link(sc.shortId).then(function() {
+            sc.linkData = {shortId: sc.shortId};
+        });
+    }
+
+    function unlink() {
+        LinkService.unlink();
     }
 }

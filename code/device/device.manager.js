@@ -5,7 +5,8 @@ var logger = log4js.getLogger('device.manager');
 module.exports = {
     firmware: 'v2.0',
     architecture: getArch(),
-    hostname: os.hostname()
+    hostname: os.hostname(),
+    memory: os.totalmem()
 };
 
 var nic = getNic();

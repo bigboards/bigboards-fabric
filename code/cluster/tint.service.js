@@ -31,6 +31,9 @@ function listTints() {
         });
 
         return Q.all(promises);
+    }, function(error) {
+        if (error.statusCode == 404) return [];
+        else throw error;
     });
 }
 

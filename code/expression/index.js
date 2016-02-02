@@ -47,7 +47,7 @@ function _idMustMatchFilter(expression) {
 
     return function(nodes) {
         nodes.forEach(function(node) {
-            if (!node.hostname.match(regex))
+            if (!node.id.match(regex))
                 nodes.splice(nodes.indexOf(node));
         });
 
@@ -60,7 +60,7 @@ function _idMustNotMatchFilter(expression) {
 
     return function(nodes) {
         nodes.forEach(function(node) {
-            if (node.hostname.match(regex))
+            if (node.id.match(regex))
                 nodes.splice(nodes.indexOf(node));
         });
 

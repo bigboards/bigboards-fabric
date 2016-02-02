@@ -3,7 +3,9 @@ var logger = log4js.getLogger('cluster');
 var Watcher = require('../utils/watcher');
 
 var consul = require('consul')();
+var config = require('../config').lookupEnvironment();
 var device = require('../device/device.manager');
+var node = require('../node/node');
 
 var Introspecter = require('../introspecter');
 
@@ -17,7 +19,8 @@ var watches = {
     tint: null,
     node: {
         container: null,
-        resource: null
+        resource: null,
+        hive: null
     }
 };
 
@@ -51,10 +54,13 @@ function registerNode(localIp, localPort) {
         watcher.registerHandler('node.container', require('../node/container.watcher'));
         watches.node.container = watcher.watchChanges('node.container', consul.kv.get, { key: 'nodes/' + device.id + '/containers', recurse: true });
 
-
         logger.debug('Start watching for resources on this node');
         watcher.registerHandler('node.resource', require('../node/resource.watcher'));
         watches.node.resource = watcher.watchChanges('node.resource', consul.kv.get, { key: 'nodes/' + device.id + '/resources', recurse: true });
+
+        logger.debug('Start watching for hive changes on this node');
+        watcher.registerHandler('node.hive', require('../node/hive.watcher'));
+        watches.node.hive = watcher.watchChanges('node.hive', consul.kv.get, { key: 'hive', recurse: true });
 
         return raceForLeader(localIp, localPort, sessionId);
     });

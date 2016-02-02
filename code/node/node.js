@@ -8,6 +8,8 @@ var Q = require('q'),
 var config = require('../config').lookupEnvironment();
 var device = require('../device/device.manager');
 var logger = log4js.getLogger('node');
+var unirest = require('unirest');
+var Introspecter = require('../introspecter');
 
 module.exports = {
     container: {
@@ -25,6 +27,11 @@ module.exports = {
         create: provisionResource,
         remove: removeResource,
         removeAll: removeAllResources
+    },
+    hive: {
+        register: registerWithHive,
+        update: updateHive,
+        deregister: deregisterFromHive
     }
 };
 
@@ -69,7 +76,14 @@ function createContainer(definition) {
     if (definition.ArchitectureAware) definition.Image += '-' + device.architecture;
 
     // -- check if the container already exists
-    return du.container.create(definition);
+    return du.container.exists(definition.name).then(function(exists) {
+        if (exists) {
+            logger.info('Not creating the docker container since it already exists');
+            return Q();
+        } else {
+            return du.container.create(definition);
+        }
+    });
 }
 
 function removeAll() {
@@ -161,4 +175,80 @@ function removeAllResources() {
     var res = sh.rm(config.dir.data + '/tints', {sudo: config.sudo, flags: 'rf'});
 
     return Q(res);
+}
+
+function registerWithHive(shortId) {
+    var url = (config.hive.port == 443 ? 'https://' : 'http://') + config.hive.host + ':' + config.hive.port + '/api/v1/devices';
+    logger.info('Registering node on the hive at ' + url + ' with shortId ' + shortId);
+
+    return Introspecter().then(function(data) {
+        var defer = Q.defer();
+
+        data.short_id = shortId;
+
+        logger.debug('registering ' + JSON.stringify(data, null, 2));
+
+        unirest.put(url)
+            .header('Accept', 'application/json')
+            .type('json')
+            .send(data)
+            .end(function (response) {
+                if (response.ok) {
+                    logger.debug('Registration success');
+                    defer.resolve({ ok: true });
+                } else {
+                    logger.warn('Registration error: ' + JSON.stringify(response.body));
+                    defer.reject({ok: false, message: response.body});
+                }
+            });
+
+        return defer.promise;
+    });
+}
+
+function updateHive() {
+    var url = (config.hive.port == 443 ? 'https://' : 'http://') + config.hive.host + ':' + config.hive.port + '/api/v1/devices/' + device.id;
+    logger.info('Updating node on the hive at ' + url);
+
+    return Introspecter().then(function(data) {
+        var defer = Q.defer();
+
+        var patches = [
+            { op: 'set', fld: 'ipv4', val: data.ipv4 }
+        ];
+
+        logger.debug('patches: ' + JSON.stringify(patches, null, 2));
+
+        unirest.patch(url)
+            .header('Accept', 'application/json')
+            .type('json')
+            .send(JSON.stringify(patches))
+            .end(function (response) {
+                if (response.ok) {
+                    logger.debug('Hive update success');
+                    defer.resolve({ ok: true });
+                } else {
+                    logger.warn('Hive update error: ' + JSON.stringify(response.body));
+                    defer.reject({ok: false, message: response.body});
+                }
+            });
+
+        return defer.promise;
+    });
+}
+
+function deregisterFromHive() {
+    var url = (config.hive.port == 443 ? 'https://' : 'http://') + config.hive.host + ':' + config.hive.port + '/api/v1/devices/' + device.id;
+
+    var defer = Q.defer();
+
+    unirest.delete(url)
+        .header('Accept', 'application/json')
+        .send()
+        .end(function (response) {
+            if (response.ok) defer.resolve({ ok: true });
+            else defer.reject({ok: false, message: response.body});
+        });
+
+    return defer.promise;
 }

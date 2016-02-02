@@ -16,6 +16,7 @@ module.exports = function() {
 
     var data = {
         deviceId: null,
+        name: os.hostname(),
         hostname: os.hostname(),
         arch: getArch(),
         memory: os.totalmem(),
