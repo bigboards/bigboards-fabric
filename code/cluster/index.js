@@ -1,11 +1,13 @@
 var log4js = require('log4js');
 var logger = log4js.getLogger('cluster');
+var tickerLog = log4js.getLogger('cluster.ticker');
 var Watcher = require('../utils/watcher');
 
 var consul = require('consul')();
 var config = require('../config').lookupEnvironment();
 var device = require('../device/device.manager');
 var node = require('../node/node');
+var Q = require('q');
 
 var Introspecter = require('../introspecter');
 
@@ -24,18 +26,65 @@ var watches = {
     }
 };
 
+var sessions = {
+    fabric: null,
+    cluster: null
+};
+
 module.exports = {
-    start: participate
+    start: participate,
+    stop: leave
 };
 
 function participate(localPort) {
     return setNodeData().then(function(data) {
-        return registerNode(data.ipv4, localPort)
+        return registerNode(data.ipv4, localPort).then(function() {
+            // -- start beating
+            setInterval(function() {
+                store.session.renew(sessions.fabric).then(function() {
+                    tickerLog.debug("Renewed the fabric session");
+                }, function (error) {
+                    tickerLog.warn("Unable to renew the fabric session: " + error);
+                });
+
+                if (sessions.cluster) {
+                    store.session.renew(sessions.cluster).then(function() {
+                        tickerLog.debug("Renewed the cluster session");
+                    }, function (error) {
+                        tickerLog.warn("Unable to renew the cluster session: " + error);
+                    })
+                }
+
+            }, 15 * 1000)
+        })
     });
+}
+
+function leave() {
+    logger.info("leaving!");
+
+    var promises = [
+        store.session.invalidate(sessions.fabric).then(function() {
+            logger.warn("Invalidated the fabric session");
+        }, function (error) {
+            logger.error("Unable to invalidate the fabric session: " + error);
+        })
+    ];
+
+    if (sessions.cluster) promises.push(store.session.invalidate(sessions.cluster).then(function() {
+        logger.warn("Invalidated the cluster session");
+    }, function (error) {
+        logger.error("Unable to invalidate the cluster session: " + error);
+    }));
+
+    logger.info('waiting for promises to complete');
+    return Q.all(promises);
 }
 
 function setNodeData() {
     return store.session.create('Fabric', 'delete').then(function(sessionId) {
+        sessions.fabric = sessionId;
+
         return Introspecter().then(function(data) {
             return store.kv.set('nodes/' + data.deviceId, data, sessionId).then(function() {
                 data.sessionId = sessionId;
@@ -48,6 +97,7 @@ function setNodeData() {
 
 function registerNode(localIp, localPort) {
     return store.session.create('Cluster', 'release').then(function(sessionId) {
+        sessions.cluster = sessionId;
         logger.debug('Registered cluster session ' + sessionId);
 
         logger.debug('Start watching for containers on this node');

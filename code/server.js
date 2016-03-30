@@ -11,7 +11,12 @@ var express = require('express'),
     winston = require('winston'),
     Q = require('q'),
     Templater = require('./utils/templater'),
-    term = require('term.js');
+    term = require('term.js'),
+    ShutdownHook = require('shutdown-hook'),
+    sleep = require('sleep');
+
+var log4js = require('log4js');
+var logger = log4js.getLogger('server');
 
 var Cluster = require('./cluster');
 
@@ -47,8 +52,8 @@ Cluster.start(mmcConfig.port).then(function() {
         winston.info('BigBoards-mmc listening on port ' + app.get('port'));
     });
 }).fail(function(error) {
-    winston.log('error', error);
-    winston.log('error', error.stack);
+    logger.error(error);
+    logger.error(error.stack);
 });
 
 process.on('uncaughtException', function(err) {
@@ -118,7 +123,7 @@ function initializeSocketIO(server, services) {
 
 function initializeServices(mmcConfig, app) {
     var templater = new Templater();
-    winston.log('info', 'Service Registration:');
+    logger.info('Service Registration:');
 
     var services = {};
 
@@ -143,15 +148,14 @@ function initializeServices(mmcConfig, app) {
 function handleError(error) {
     // TODO must we console-log the message? Or only winston-log it?
 //    var msg = JSON.stringify(error);
-    console.log(error.message);
-    winston.log('error', error.message);
+    logger.error(error.message);
 
     if (error.code == 'EADDRINFO')
         return;
 
     switch (error.errorCode) {
         default:
-            winston.log('error', error.stack);
+            logger.error(error.stack);
     }
 }
 
