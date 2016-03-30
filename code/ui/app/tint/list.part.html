@@ -1,0 +1,28 @@
+<md-content class="view-container" layout="row" layout-padding flex>
+    <md-content class="md-whiteframe-z1 white" ng-repeat="tint in vm.tints" ng-click="vm.goto(tint)" layout="row" layout-align="start center" flex>
+        <div layout="row" layout-align="start center" style="height: 100%;">
+            <img ng-src="{{tint.logo}}" style="max-width: 100px; max-height: 100px;" />
+            <div layout="column">
+                <span class="md-title">{{ tint.name }}</span>
+                <span class="md-subhead">{{ tint.owner_name }}</span>
+            </div>
+        </div>
+        <div layout="column" flex>
+            <div layout="row">
+                <span flex></span>
+                <div ng-repeat="view in tint.stack.views" layout="column" class="m-8 p-8" style="min-width: 100px;">
+                    <md-icon md-font-icon="lnr-desktop" class="lnr md-avatar"></md-icon>
+                    <span class="md-caption" style="margin-top: 4px; text-align: center;">{{view.label}}</span>
+                    <md-tooltip>{{view.description}}</md-tooltip>
+                </div>
+            </div>
+            <div layout="row">
+                <span flex></span>
+                <div ng-repeat="view in tint.stack.views" layout="column" class="m-8 p-8" style="min-width: 100px;">
+                    <span class="md-caption" style="margin-top: 4px; text-align: center;">{{view.label}}</span>
+                    <md-tooltip>{{view.description}}</md-tooltip>
+                </div>
+            </div>
+        </div>
+    </md-content>
+</md-content>

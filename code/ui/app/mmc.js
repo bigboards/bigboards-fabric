@@ -4,5 +4,6 @@ var app = angular.module( 'mmc', [
     'ngMaterial',
     'btford.socket-io',
 
-    'mmc.node'
+    'mmc.node',
+    'mmc.tint'
 ]);

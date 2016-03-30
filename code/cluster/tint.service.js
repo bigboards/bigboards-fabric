@@ -2,7 +2,8 @@ var Q = require('q'),
     kv = require('../store/kv'),
     catalog = require('../store/catalog'),
     health = require('../store/health'),
-    log4js = require('log4js');
+    log4js = require('log4js'),
+    tu = require('../utils/tint-utils');
 
 var logger = log4js.getLogger('service.tint');
 
@@ -15,7 +16,7 @@ module.exports = {
 
 function installTint(definition) {
     // -- todo: make sure a stack tint has not been installed yet
-    return kv.set('tints/' + definition.owner + '$' + definition.slug, definition, null, 0);
+    return kv.set('tints/' + tu.id(definition), definition, null, 0);
 }
 
 function uninstallTint(profileId, slug) {
@@ -43,8 +44,6 @@ function getTint(profileId, slug) {
 
 function _getTintListItem(tintPath) {
     return _getExtendedTintDetail(tintPath).then(function(tint) {
-        delete tint.stack;
-
         return tint;
     });
 }

@@ -52,6 +52,7 @@ function handleServiceCall(req, res, promise) {
     Q(promise).then(function(data) {
         res.status(200).json(data);
     }, function(error) {
+        logger.error(error);
         if (! error) return res.status(500).json({message: 'Undetermined error occured'});
 
         if (error.name == 'NotFoundError') return res.status(404).json({message: 'The requested resource could not be found.', detail: error});

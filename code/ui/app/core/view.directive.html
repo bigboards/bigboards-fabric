@@ -1,0 +1,11 @@
+<md-content class="md-whiteframe-z1" layout-padding layout="row" layout-align="start center">
+    <div layout="column" flex>
+        <span style="font-weight:700"> {{ vm.view.label }} </span>
+        <span style="font-size: small">view</span>
+    </div>
+
+    <a layout="column" class="m-8 p-8" style="min-width: 100px;" ng-href="{{vm.view.url}}">
+        <md-icon md-font-icon="lnr-paper-plane" class="lnr"></md-icon>
+        <span class="md-caption" style="margin-top: 4px; text-align: center;">Launch</span>
+    </a>
+</md-content>

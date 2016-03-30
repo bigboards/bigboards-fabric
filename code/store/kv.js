@@ -78,7 +78,7 @@ function getValuesByPrefix(prefix) {
     consul.kv.get({key: prefix, recurse: true}, function(err, result) {
         if (err) return defer.reject(err);
 
-        return result;
+        return defer.resolve(result);
     });
 
     return defer.promise;
@@ -117,13 +117,18 @@ function setFlag(key, flag) {
     return defer.promise;
 }
 
-function setFlagForAll(key, flag) {
+function setFlagForAll(key, flag, filter) {
     var promises = [];
 
     consul.kv.keys(key, function(err, data) {
         if (err) return promises.push(Q.reject(err));
 
         data.forEach(function(subKey) {
+            if (filter && !filter(subKey)) {
+                logger.debug('skipping ' + subKey);
+                return;
+            }
+
             logger.debug('Flagging consul:' + subKey + ' to ' + flag);
             promises.push(setFlag(subKey, flag));
         });

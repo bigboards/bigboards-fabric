@@ -1,7 +1,7 @@
 var API = require('./api-helper');
 
 var resources = {
-    cluster: require('./cluster.resource'),
+    status: require('./status.resource'),
     node: require('./node.resource'),
     service: require('./service.resource'),
     setting: require('./settings.resource'),
@@ -10,7 +10,9 @@ var resources = {
 };
 
 module.exports = function(app) {
-    API.register.get(app, '/v1/cluster', resources.cluster.get);
+    API.register.get(app, '/v1/cluster', resources.status.get);
+
+    API.register.get(app, '/v1/cluster/status', resources.status.status);
 
     API.register.get(app, '/v1/cluster/settings', resources.setting.get);
     API.register.post(app, '/v1/cluster/settings', resources.setting.set);

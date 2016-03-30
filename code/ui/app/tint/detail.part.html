@@ -1,0 +1,83 @@
+<md-content layout-padding layout="row">
+    <md-content flex="60">
+        <md-content class="md-whiteframe-z1" layout-padding>
+            <div layout="row">
+                <div layout="column" flex="50">
+                    <h3 class="md-headline">Basics</h3>
+                    <md-list>
+                        <md-list-item class="md-2-line">
+                            <md-icon md-font-icon="lnr-tag" class="lnr"></md-icon>
+                            <div class="md-list-item-text">
+                                <h3> {{ vm.node.hostname }} </h3>
+                                <p> {{ vm.node.deviceId }} </p>
+                            </div>
+                        </md-list-item>
+                    </md-list>
+                </div>
+                <div layout="column" flex="50">
+                    <h3 class="md-headline">Network</h3>
+                    <md-list>
+                        <md-list-item class="md-2-line">
+                            <md-icon md-font-icon="lnr-lan2" class="lnr"></md-icon>
+                            <div class="md-list-item-text">
+                                <h3> {{ vm.node.ipv4 }} </h3>
+                                <p> {{ vm.node.mac }} </p>
+                            </div>
+                        </md-list-item>
+                    </md-list>
+                </div>
+            </div>
+
+        </md-content>
+        <md-content class="md-whiteframe-z1" layout-padding>
+            <h3 class="md-headline">Storage</h3>
+            <div layout="row">
+                <md-list flex="50">
+                    <md-list-item class="md-2-line" ng-repeat="disk in vm.node.disks">
+                        <md-icon md-font-icon="lnr-database" class="lnr"></md-icon>
+                        <div class="md-list-item-text">
+                            <h3> {{ disk.mount }} </h3>
+                            <p> {{ disk.size | bytes }} total storage</p>
+                        </div>
+                    </md-list-item>
+                </md-list>
+
+                <md-list flex="50">
+                    <md-list-item class="md-2-line">
+                        <md-icon md-font-icon="lnr-chip" class="lnr"></md-icon>
+                        <div class="md-list-item-text">
+                            <h3> Memory </h3>
+                            <p> {{ vm.node.memory | bytes }}</p>
+                        </div>
+                    </md-list-item>
+                </md-list>
+            </div>
+        </md-content>
+        <md-content class="md-whiteframe-z1" layout-padding>
+            <h3 class="md-headline">CPU</h3>
+            <md-list>
+                <md-list-item class="md-2-line" ng-repeat="cpu in vm.node.cpus track by $index">
+                    <md-icon md-font-icon="lnr-speed-slow" class="lnr"></md-icon>
+                    <div class="md-list-item-text">
+                        <h3> {{ cpu }} </h3>
+                        <p> {{ vm.node.arch }} architecture </p>
+                    </div>
+                </md-list-item>
+            </md-list>
+        </md-content>
+    </md-content>
+    <md-content flex="40">
+        <md-content class="md-whiteframe-z1" layout-padding>
+            <h3 class="md-headline">Health</h3>
+            <md-list>
+                <md-list-item class="md-2-line" ng-repeat="check in vm.node.health">
+                    <md-icon md-font-icon="lnr-rocket" class="lnr" ng-class="check.status"></md-icon>
+                    <div class="md-list-item-text">
+                        <h3> {{ check.name }} </h3>
+                        <p> {{ check.output }} </p>
+                    </div>
+                </md-list-item>
+            </md-list>
+        </md-content>
+    </md-content>
+</md-content>

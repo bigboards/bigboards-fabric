@@ -1,0 +1,27 @@
+<md-content class="md-whiteframe-z1" layout-padding layout="row" layout-align="start center">
+    <div layout="column" flex>
+        <span style="font-weight:700"> {{ vm.container.name }} </span>
+        <span style="font-size: small">container</span>
+    </div>
+
+    <div layout="column" class="m-8 p-8" style="min-width: 100px;">
+        <md-icon md-font-icon="lnr-checkmark-circle" class="lnr"></md-icon>
+        <span class="md-caption" style="margin-top: 4px; text-align: center;">{{ vm.status.stats['2'] }}</span>
+        <md-tooltip>{{ vm.status.stats['2'] }} ready out of {{ vm.status.stats.total }} instances</md-tooltip>
+    </div>
+    <div layout="column" class="m-8 p-8" style="min-width: 100px;">
+        <md-icon md-font-icon="lnr-plus-circle" class="lnr"></md-icon>
+        <span class="md-caption" style="margin-top: 4px; text-align: center;">{{ vm.status.stats['0'] }}</span>
+        <md-tooltip>{{ vm.status.stats['0'] }} being created out of {{ vm.status.stats.total }} instances</md-tooltip>
+    </div>
+    <div layout="column" class="m-8 p-8" style="min-width: 100px;">
+        <md-icon md-font-icon="lnr-notification-circle" class="lnr"></md-icon>
+        <span class="md-caption" style="margin-top: 4px; text-align: center;">{{ vm.status.stats['1'] }}</span>
+        <md-tooltip>{{ vm.status.stats['1'] }} being updated out of {{ vm.status.stats.total }} instances</md-tooltip>
+    </div>
+    <div layout="column" class="m-8 p-8" style="min-width: 100px;">
+        <md-icon md-font-icon="lnr-cross-circle" class="lnr"></md-icon>
+        <span class="md-caption" style="margin-top: 4px; text-align: center;">{{ vm.status.stats['999'] }}</span>
+        <md-tooltip>{{ vm.status.stats['999'] }} being removed out of {{ vm.status.stats.total }} instances</md-tooltip>
+    </div>
+</md-content>

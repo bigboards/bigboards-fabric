@@ -22,27 +22,25 @@ module.exports = {
 // == Install
 // ====================================================================================================================
 function installResourceForTint(tint) {
-    var promises = [];
+    logger.debug('Installing resources for ' + tint.type + ' ' + tint.slug);
+    getNodesForTint(tint)
+        .then(function(nodes) {
+            var promises = [];
 
-
-
-    if (tint.type == 'stack') {
-        logger.debug('Installing resources for ' + tint.type + ' ' + tint.slug);
-        return getNodesForTint(tint)
-            .then(function(nodes) {
-                var promises = [];
-
-                promises.push(installConfigurationResource(tint, nodes));
-
-                tint.stack.containers.forEach(function(container) {
-                    promises.push(installContainerResources(tint, nodes, container));
-                });
-
-                return Q.all(promises);
+            tint.resources.forEach(function(resource) {
+                promises.push(installConfigurationResource(tint, nodes, resource))
             });
-    }
 
-    return Q.all(promises)
+            if (tint.services) {
+                tint.services.forEach(function (service) {
+                    service.daemons.forEach(function (daemon) {
+                        promises.push(installContainerResources(tint, nodes, service, daemon));
+                    })
+                });
+            }
+
+            return Q.all(promises);
+        });
 }
 
 function getNodesForTint(tint) {
@@ -52,80 +50,73 @@ function getNodesForTint(tint) {
     var result = [];
 
     var promises = [];
-    tint.stack.groups.forEach(function(group) {
-        promises.push(expression.nodes(group.runs_on).then(function(nodes) {
-            nodes.forEach(function(node) {
-                if (result.indexOf(node) == -1) result.push(node);
-            });
-        }));
-    });
+    if (tint.services) {
+        tint.services.forEach(function(service) {
+            service.daemons.forEach(function(daemon) {
+                promises.push(expression.nodes(daemon.instances).then(function(nodes) {
+                    nodes.forEach(function(node) {
+                        if (result.indexOf(node) == -1) result.push(node);
+                    });
+                }));
+            })
+        })
+    }
 
     return Q.all(promises)
         .then(function() { return result; });
 }
 
-function installConfigurationResource(tint, nodes) {
+function installConfigurationResource(tint, nodes, resource) {
     var promises = [];
 
     var tintFsDir = config.dir.data + '/tints/' + tu.id(tint) + '/resources';
-    var tintConfigDir = tintFsDir + '/config';
+    var tintConfigDir = tintFsDir + '/' + resource.id;
 
     nodes.forEach(function(node) {
-        promises.push(registerResourceOnNode(tint, node, 'config', 'template', tintConfigDir, createScope(tint)));
+        promises.push(registerResourceOnNode(tint, node, resource.id, 'template', tintConfigDir, createScope(tint)));
     });
 
     return Q.all(promises);
 }
 
-function installContainerResources(tint, nodes, container) {
+function installContainerResources(tint, nodes, service, daemon) {
     var promises = [];
 
     nodes.forEach(function(node) {
-        promises.push(installResourcesForContainerOnNode(tint, node, container));
+        promises.push(installResourcesForContainerOnNode(tint, node, service, daemon));
     });
 
     return Q.all(promises);
 }
 
-function installResourcesForContainerOnNode(tint, node, container) {
-    logger.debug('create the resources needed by the docker container');
+function installResourcesForContainerOnNode(tint, node, service, daemon) {
+    logger.debug('create the resources needed by the service daemon');
 
-    var volumes = container.volumes;
+    var volumes = daemon.configuration.Mounts;
     if (!volumes) return Q();
 
-    logger.debug('Iterate the volumes as they are defined in the container configuration');
+    logger.debug('Iterate the volumes as they are defined in the daemon configuration');
     var promises = [];
     volumes.forEach(function(volume) {
-        promises.push(installResourcesForContainerVolumeOnNode(tint, node, container, volume))
+        promises.push(installResourcesForContainerVolumeOnNode(tint, node, service, daemon, volume))
     });
 
     return Q.all(promises);
 }
 
-function installResourcesForContainerVolumeOnNode(tint, node, container, volume) {
-    var tintFsDir = config.dir.data + '/tints/' + tint.id + '/resources';
-    var tintConfigDir = tintFsDir + '/config';
-    var tintDataDir = tintFsDir + '/data';
+function installResourcesForContainerVolumeOnNode(tint, node, service, daemon, volume) {
+    var tintFsDir = config.dir.data + '/tints/' + tu.id(tint) + '/resources';
 
     var filename;
-    if (volume.host.indexOf('config:') == 0) {
+    if (volume.Source.indexOf('resource:') == 0) {
         // -- mount a configuration volume. This means we will take the data from consul and generate it into the
         // -- configuration folder on the FS
-        filename = volume.host.substr('config:'.length);
+        filename = volume.Source.substr('resource:'.length);
         if (filename.indexOf('/') == 0) filename = filename.substring(1);
 
-        volume.host = tintConfigDir + '/' + filename;
+        volume.Source = tintFsDir + '/' + filename;
         return Q();
 
-    } else if (volume.host.indexOf('data:') == 0) {
-        // -- mount a data directory.
-        // -- data directories are used to store data that can be accessed by the host OS while also being available
-        // -- inside the container
-        filename = volume.host.substr('data:'.length);
-        if (filename.indexOf('/') == 0) filename = filename.substring(1);
-
-        volume.host = tintDataDir + '/' + container.name + '/' + filename;
-        return registerResourceOnNode(tint, node, 'data/' + filename, 'directory', volume.host, createScope(tint));
     } else return Q();
 }
 
@@ -148,13 +139,11 @@ function removeResources() {
 function removeTintResources(tint) {
     var promises = [];
 
-    if (tint.type == 'stack') {
-        getNodesForTint(tint).then(function(nodes) {
-            nodes.forEach(function(node) {
-                promises.push(removeTintResourcesOnNode(tint, node));
-            });
+    getNodesForTint(tint).then(function(nodes) {
+        nodes.forEach(function(node) {
+            promises.push(removeTintResourcesOnNode(tint, node));
         });
-    }
+    });
 
     return Q.all(promises)
 }

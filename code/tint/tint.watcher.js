@@ -7,7 +7,7 @@ var logger = log4js.getLogger('watcher.tint');
 
 var ResourceProviders = require('./resources');
 
-var ContainerDispatcher = require('./container.dispatcher');
+var ContainerDispatcher = require('./daemon.dispatcher.js');
 var ResourceDispatcher = require('./resource.dispatcher');
 
 module.exports = {
@@ -24,13 +24,12 @@ function ready(tint) {
 }
 
 function created(tint, key) {
-    var resourceDefinition = {
-        provider: 'git',
-        consulPath: 'resources/' + tu.id(tint),
-        url: tint.uri
-    };
+    var promises = [];
+    tint.resources.forEach(function(resource) {
+        promises.push(loadResourceIntoConsul(tint, resource))
+    });
 
-    return loadResourceIntoConsul(resourceDefinition)
+    return Q.all(promises)
         .then(function() {
             logger.info('distributing resources to nodes');
             return ResourceDispatcher.install.byTint(tint);
@@ -79,11 +78,13 @@ function error(err) {
 
 }
 
-function loadResourceIntoConsul(resourceDefinition) {
+function loadResourceIntoConsul(tint, resourceDefinition) {
     var provider = ResourceProviders[resourceDefinition.provider];
     if (! provider) return Q.reject('Unable to find provider ' + resourceDefinition.provider);
 
-    return provider.toConsul(resourceDefinition.consulPath, resourceDefinition).then(function() {
+    var pathInConsul = "resources/" + tu.id(tint) + "/" + resourceDefinition.id;
+
+    return provider.toConsul(pathInConsul, resourceDefinition.settings).then(function() {
         logger.info('Moved the configuration resource into consul');
     });
 }

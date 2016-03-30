@@ -73,6 +73,8 @@ function pullContainerImage(definition) {
 }
 
 function createContainer(definition) {
+    logger.warn("image = " + definition.Image);
+
     if (definition.ArchitectureAware) definition.Image += '-' + device.architecture;
 
     // -- check if the container already exists

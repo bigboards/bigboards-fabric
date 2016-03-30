@@ -51,8 +51,8 @@ function registerNode(localIp, localPort) {
         logger.debug('Registered cluster session ' + sessionId);
 
         logger.debug('Start watching for containers on this node');
-        watcher.registerHandler('node.container', require('../node/container.watcher'));
-        watches.node.container = watcher.watchChanges('node.container', consul.kv.get, { key: 'nodes/' + device.id + '/containers', recurse: true });
+        watcher.registerHandler('node.daemon', require('../node/daemon-instance.watcher.js'));
+        watches.node.container = watcher.watchChanges('node.daemon', consul.kv.get, { key: 'nodes/' + device.id + '/daemons', recurse: true });
 
         logger.debug('Start watching for resources on this node');
         watcher.registerHandler('node.resource', require('../node/resource.watcher'));

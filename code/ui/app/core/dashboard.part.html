@@ -1,0 +1,49 @@
+<md-content class="view-container" layout="row" layout-padding flex>
+    <md-content layout="column" flex>
+        <md-content class="md-whiteframe-z1 white" ng-repeat="tint in vm.tints" ng-click="vm.goto(tint)" layout="column" layout-align="start stretch" flex>
+            <div layout="row" layout-align="start center" style="height: 100%;">
+                <img ng-src="{{tint.logo}}" style="max-width: 100px; max-height: 100px;" />
+                <div layout="column">
+                    <span class="md-title">{{ tint.name }}</span>
+                    <span class="md-subhead">{{ tint.owner_name }}</span>
+                </div>
+            </div>
+            <span flex></span>
+            <bb-tint-view view="view" ng-repeat="view in tint.stack.views"></bb-tint-view>
+            <bb-container container="container" container-status="vm.status.containers[container.name]" ng-repeat="container in tint.stack.containers"></bb-container>
+        </md-content>
+    </md-content>
+
+    <md-content layout="column" flex>
+        <md-card ng-repeat="node in vm.nodes" style="max-width: 440px; min-width: 440px;" ng-click="vm.goto(node)">
+            <md-card-header>
+                <md-card-avatar>
+                    <md-icon class="lnr" md-font-icon="lnr-chip" ng-class="node.health" ></md-icon>
+                </md-card-avatar>
+                <md-card-header-text>
+                    <span class="md-title">{{ node.hostname }}</span>
+                    <span class="md-subhead">{{ node.ipv4 }}</span>
+                </md-card-header-text>
+            </md-card-header>
+            <md-card-content md-layout="row" class="md-warn">
+                <div flex layout="row" layout-align="center center">
+                    <div flex="33" layout="column" layout-align="center center">
+                        <span class="md-body">{{ node.cpus.length }}</span>
+                        <span class="md-caption">cores</span>
+                    </div>
+
+                    <div flex="33" layout="column" layout-align="center center">
+                        <span class="md-body">{{ node.memory | bytes }}</span>
+                        <span class="md-caption">memory</span>
+                    </div>
+
+                    <div flex="33" layout="column" layout-align="center center">
+                        <span class="md-body">{{ node.storage | bytes }}</span>
+                        <span class="md-caption">storage</span>
+                    </div>
+                </div>
+            </md-card-content>
+        </md-card>
+    </md-content>
+</md-content>
+
