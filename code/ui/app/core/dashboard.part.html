@@ -1,6 +1,6 @@
 <md-content class="view-container" layout="row" layout-padding flex>
     <div layout="row" flex>
-        <md-content ng-repeat="tint in vm.tints" ng-click="vm.goto(tint)" layout="column" layout-align="start stretch" layout-padding flex>
+        <md-content ng-repeat="tint in vm.tints" layout="column" layout-align="start stretch" layout-padding flex>
             <div>
                 <div class="md-whiteframe-z1" layout="row" layout-align="start center" layout-padding>
                     <img ng-src="{{tint.logo}}" style="max-width: 100px; max-height: 100px;" />
@@ -17,7 +17,7 @@
     </div>
 
     <md-content layout="column" flex>
-        <md-card ng-repeat="node in vm.nodes" style="max-width: 440px; min-width: 440px;" ng-click="vm.goto(node)">
+        <md-card ng-repeat="node in vm.nodes" style="max-width: 440px; min-width: 440px;" ng-click="vm.goto('/nodes/' + node.deviceId)">
             <md-card-header>
                 <md-card-avatar>
                     <md-icon class="lnr" md-font-icon="lnr-chip" ng-class="node.health" ></md-icon>

@@ -41,11 +41,8 @@
     <md-toolbar layout="row" class="transparent" ng-if="!ac.isMinimal">
         <h3 class="m-l-16 md-display-1" flex>{{ ac.page.title() }}</h3>
 
-        <md-button aria-label="Navigate to the main page" ng-click="ac.goto('/nodes')">
+        <md-button aria-label="Navigate to the main page" ng-click="ac.goto('/')">
             <md-icon md-font-icon="lnr-home" class="lnr" ></md-icon>
-        </md-button>
-        <md-button aria-label="Navigate to the library">
-            <md-icon md-font-icon="lnr-drop" class="lnr" ></md-icon>
         </md-button>
         <md-button aria-label="Navigate to the settings" ng-click="ac.toggleList()">
             <md-icon md-font-icon="lnr-cog" class="lnr" ></md-icon>
