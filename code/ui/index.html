@@ -38,7 +38,7 @@
 
 
 <div flex layout="column" tabIndex="-1" role="main">
-    <md-toolbar layout="row" class="transparent">
+    <md-toolbar layout="row" class="transparent" ng-if="!ac.isMinimal">
         <h3 class="m-l-16 md-display-1" flex>{{ ac.page.title() }}</h3>
 
         <md-button aria-label="Navigate to the main page" ng-click="ac.goto('/nodes')">
@@ -52,8 +52,8 @@
         </md-button>
     </md-toolbar>
 
-    <md-content flex id="content" class="bb-background">
-        <div class="site-content" ng-view ></div>
+    <md-content layout="row" flex id="content" class="bb-background">
+        <div class="site-content" layout="column" flex ng-view ></div>
     </md-content>
 </div>
 
@@ -78,6 +78,7 @@
 <script src="app/core/application.controller.js"></script>
 <script src="app/core/settings.controller.js"></script>
 <script src="app/core/dashboard.controller.js"></script>
+<script src="app/core/bootstrap.controller.js"></script>
 <script src="app/core/node.service.js"></script>
 <script src="app/core/tint.service.js"></script>
 <script src="app/core/status.service.js"></script>
@@ -107,20 +108,28 @@
 </script>
 
 <script>
-    angular.element(document).ready(function() {
-        var api = '';
-        //var api = 'http://jack.hex.bigboards.io:7000';
+    (function() {
+        var mmc = angular.module("mmc");
 
-//        $.getJSON(api + '/api/v1/settings/client', function(data) {
-            var data = {
-                api: api
-            };
+        fetchData().then(bootstrapApplication);
 
-            sessionStorage.setItem('settings', JSON.stringify(data));
+        function fetchData() {
+            var initInjector = angular.injector(["ng"]);
+            var $http = initInjector.get("$http");
 
-            angular.bootstrap(document, ['mmc']);
-//        });
-    });
+            return $http.get("/v1/status").then(function(response) {
+                mmc.constant("nodeInfo", response.data);
+            }, function(errorResponse) {
+                // Handle error case
+            });
+        }
+
+        function bootstrapApplication() {
+            angular.element(document).ready(function() {
+                angular.bootstrap(document, ["mmc"]);
+            });
+        }
+    }());
 </script>
 
 </body>

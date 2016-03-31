@@ -12,5 +12,10 @@ function Config($sceProvider, $mdThemingProvider, $routeProvider) {
             templateUrl: 'app/core/dashboard.part.html',
             controller: 'DashboardController',
             controllerAs: 'vm'
+        })
+        .when('/bootstrap', {
+            templateUrl: 'app/core/bootstrap.part.html',
+            controller: 'BootstrapController',
+            controllerAs: 'vm'
         });
 }

@@ -1,0 +1,3 @@
+port: 7000
+nic: wlp2s0
+data_dir: /tmp/data

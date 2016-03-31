@@ -1,5 +1,6 @@
 var os = require('os'),
-    fsu = require('./utils/fs-utils');
+    fsu = require('./utils/fs-utils'),
+    settings = require('./settings');
 
 module.exports = {
     lookupEnvironment: function() {

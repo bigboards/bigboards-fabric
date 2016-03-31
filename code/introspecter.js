@@ -1,12 +1,13 @@
 var disk = require('diskusage'),
     os = require('os'),
+    su = require('./utils/sys-utils'),
     Q = require('q');
 
-var config = require('./config').lookupEnvironment();
+var settings = require('./settings');
 
 module.exports = function() {
-    var nic = config.nic;
-    var dataDir = config.dir.data;
+    var nic = settings.get('nic');
+    var dataDir = settings.get('data_dir');
 
     // -- check if the nic is available
     var nics = os.networkInterfaces();
@@ -18,7 +19,7 @@ module.exports = function() {
         deviceId: null,
         name: os.hostname(),
         hostname: os.hostname(),
-        arch: getArch(),
+        arch: su.architecture(),
         memory: os.totalmem(),
         cpus: [],
         disks: [],
@@ -48,15 +49,6 @@ module.exports = function() {
         return data;
     });
 };
-
-function getArch() {
-    var arch = os.arch();
-
-    if (arch == 'x64') return 'x86_64';
-    if (arch == 'arm') return 'armv7l';
-    if (arch == 'ia32') return 'x86';
-    return 'unknown';
-}
 
 function getDiskInfo(path) {
     var defer = Q.defer();

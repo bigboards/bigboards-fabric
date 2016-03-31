@@ -1,0 +1,24 @@
+<md-content layout="row" style="min-height: 100%;" layout-align="center center" layout-padding flex>
+    <div class="md-whiteframe-z1" style="max-width: 400px;" layout-padding>
+        <h1 class="md-display-3">Hi There!</h1>
+        <p class="md-body-1">
+            Glad you could make it to the party. Now things are getting serious since you need to link this
+            single device to the central hive. Once you have done that, you can get a taste of all the goodies
+            we have in store for you.
+        </p>
+        <p class="md-body-1">
+            In order to get started, enter your short-id in the text field below and click on the link button
+        </p>
+
+        <div layout="row">
+            <md-input-container flex>
+                <label>Short ID</label>
+                <input ng-model="vm.shortId">
+            </md-input-container>
+            <md-button class="md-button md-accent" ng-click="vm.link()">
+                Link
+            </md-button>
+        </div>
+    </div>
+</md-content>
+
