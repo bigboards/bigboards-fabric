@@ -29,28 +29,28 @@ function _getNodeStatus() {
     logger.debug('Reading the status of the nodes ');
 
     return kv.get.prefix('nodes').then(function(values) {
-        var regex = new RegExp('nodes\/(.*)/containers\/(.*)');
+        var regex = new RegExp('nodes\/(.*)/daemons\/(.*)');
         var result = {
             nodes: {},
-            containers: {}
+            daemons: {}
         };
 
         values.forEach(function(value) {
             if (! regex.test(value.Key)) return;
 
             var parts = regex.exec(value.Key);
-            var container = parts[2];
+            var daemon = parts[2];
             var node = parts[1];
 
-            if (! result.nodes[node]) result.nodes[node] = { containers: {}, stats: { total: 0, 0: 0, 1: 0, 2: 0, 999: 0} };
-            result.nodes[parts[1]].containers[container] = value.Flags;
+            if (! result.nodes[node]) result.nodes[node] = { daemons: {}, stats: { total: 0, 0: 0, 1: 0, 2: 0, 999: 0} };
+            result.nodes[parts[1]].daemons[daemon] = value.Flags;
             result.nodes[node].stats[value.Flags] = result.nodes[node].stats[value.Flags] + 1;
             result.nodes[node].stats.total += 1;
 
-            if (! result.containers[container]) result.containers[container] = { nodes: {}, stats: { total: 0, 0: 0, 1: 0, 2: 0, 999: 0} };
-            result.containers[container].nodes[node] = value.Flags;
-            result.containers[container].stats[value.Flags] = result.containers[container].stats[value.Flags] + 1;
-            result.containers[container].stats.total += 1;
+            if (! result.daemons[daemon]) result.daemons[daemon] = { nodes: {}, stats: { total: 0, 0: 0, 1: 0, 2: 0, 999: 0} };
+            result.daemons[daemon].nodes[node] = value.Flags;
+            result.daemons[daemon].stats[value.Flags] = result.daemons[daemon].stats[value.Flags] + 1;
+            result.daemons[daemon].stats.total += 1;
         });
 
         return result;

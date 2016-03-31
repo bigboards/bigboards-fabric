@@ -28,7 +28,7 @@ function start() {
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(bodyParser.json());
 
-    app.use(express.static(path.join(__dirname, '../ui')));
+    app.use(express.static(path.join(__dirname, './ui')));
 
     app.use(app.router);
 
