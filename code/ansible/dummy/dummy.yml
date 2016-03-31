@@ -1,5 +1,0 @@
----
-- hosts: host
-  tasks:
-    - debug: msg="Yeehaaa, BigBoards says the answer to all questions is {{item}}"
-      with_sequence: count=32

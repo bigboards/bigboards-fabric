@@ -5,7 +5,6 @@ var expression = require('../expression'),
     log4js = require('log4js');
 
 var logger = log4js.getLogger('dispatcher.daemon');
-var device = require('../device/device.manager');
 var containerModelMapper = require('../model/container/v2.0');
 
 /**

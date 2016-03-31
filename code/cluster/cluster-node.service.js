@@ -45,11 +45,19 @@ function _getNodeListItem(nodeId) {
             node.health = CheckStates[worstStatusLevel];
         }
 
+        node.cores = 0;
+        if (node.cpus) {
+            node.cores = node.cpus.length;
+            delete node.cpus;
+        }
+
         node.storage = 0;
-        node.disks.forEach(function(disk) {
-            node.storage += disk.size;
-        });
-        delete node.disks;
+        if (node.disks) {
+            node.disks.forEach(function (disk) {
+                node.storage += disk.size;
+            });
+            delete node.disks;
+        }
 
         return node;
     });

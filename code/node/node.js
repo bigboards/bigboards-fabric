@@ -5,8 +5,9 @@ var Q = require('q'),
     fs = require('../utils/fs-utils'),
     sh = require('../utils/sh-utils');
 
-var config = require('../config').lookupEnvironment();
-var device = require('../device/device.manager');
+var node = require('../node');
+
+var settings = require('../settings');
 var logger = log4js.getLogger('node');
 var unirest = require('unirest');
 var Introspecter = require('../introspecter');
@@ -41,7 +42,7 @@ module.exports = {
 
 function pullContainerImage(definition) {
     var image = definition.Image;
-    if (definition.ArchitectureAware) image += '-' + device.architecture;
+    if (definition.ArchitectureAware) image += '-' + node.architecture;
 
     // -- check if a repo tag has been provided. if not, we will pull the latest tag
     if (image.indexOf(':') == -1) image += ':latest';
@@ -75,7 +76,7 @@ function pullContainerImage(definition) {
 function createContainer(definition) {
     logger.warn("image = " + definition.Image);
 
-    if (definition.ArchitectureAware) definition.Image += '-' + device.architecture;
+    if (definition.ArchitectureAware) definition.Image += '-' + node.architecture;
 
     // -- check if the container already exists
     return du.container.exists(definition.name).then(function(exists) {
@@ -171,16 +172,16 @@ function provisionTemplate(definition, templateKey) {
 }
 
 function removeResource(definition) {
-    return Q(sh.rm(definition.fsPath, {sudo: config.sudo, flags: 'rf'}));
+    return Q(sh.rm(definition.fsPath, {sudo: settings.get('sudo', false), flags: 'rf'}));
 }
 function removeAllResources() {
-    var res = sh.rm(config.dir.data + '/tints', {sudo: config.sudo, flags: 'rf'});
+    var res = sh.rm(settings.get('data_dir') + '/tints', {sudo: settings.get('sudo', false), flags: 'rf'});
 
     return Q(res);
 }
 
 function registerWithHive(shortId) {
-    var url = (config.hive.port == 443 ? 'https://' : 'http://') + config.hive.host + ':' + config.hive.port + '/api/v1/devices';
+    var url = (settings.get("hive_port", 80) == 443 ? 'https://' : 'http://') + settings.get("hive_host", "hive.bigboards.io") + ':' + settings.get("hive_port", 80) + '/api/v1/devices';
     logger.info('Registering node on the hive at ' + url + ' with shortId ' + shortId);
 
     return Introspecter().then(function(data) {
@@ -209,7 +210,7 @@ function registerWithHive(shortId) {
 }
 
 function updateHive() {
-    var url = (config.hive.port == 443 ? 'https://' : 'http://') + config.hive.host + ':' + config.hive.port + '/api/v1/devices/' + device.id;
+    var url = (settings.get("hive_port", 80) == 443 ? 'https://' : 'http://') + settings.get("hive_host", "hive.bigboards.io") + ':' + settings.get("hive_port", 80) + '/api/v1/devices/' + node.id;
     logger.info('Updating node on the hive at ' + url);
 
     return Introspecter().then(function(data) {
@@ -240,7 +241,7 @@ function updateHive() {
 }
 
 function deregisterFromHive() {
-    var url = (config.hive.port == 443 ? 'https://' : 'http://') + config.hive.host + ':' + config.hive.port + '/api/v1/devices/' + device.id;
+    var url = (settings.get("hive_port", 80) ? 'https://' : 'http://') + settings.get("hive_host", "hive.bigboards.io") + ':' + settings.get("hive_port", 80) + '/api/v1/devices/' + node.id;
 
     var defer = Q.defer();
 

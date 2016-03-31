@@ -5,7 +5,7 @@ var Q = require('q'),
     log4js = require('log4js'),
     tu = require('../utils/tint-utils');
 
-var logger = log4js.getLogger('service.tint');
+var logger = log4js.getLogger('service.cluster.tint');
 
 module.exports = {
     list: listTints,

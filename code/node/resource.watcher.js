@@ -1,9 +1,9 @@
-var device = require('../device/device.manager'),
-    kv = require('../store/kv');
+var kv = require('../store/kv');
 
 var log4js = require('log4js');
 var logger = log4js.getLogger('watcher.node.resource');
 var node = require('./node');
+var nodeInfo = require('./index');
 
 module.exports = {
     created: created,
@@ -36,6 +36,6 @@ function cleanup() {
     return node.resource.removeAll()
         .then(function(data) {
             logger.debug('Removing all resources from consul');
-            return kv.remove.prefix('nodes/' + device.id + '/resources');
+            return kv.remove.prefix('nodes/' + nodeInfo.id + '/resources');
         });
 }

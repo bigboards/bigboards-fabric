@@ -2,21 +2,17 @@ var log4js = require('log4js');
 var logger = log4js.getLogger('cluster');
 var tickerLog = log4js.getLogger('cluster.ticker');
 var Watcher = require('../utils/watcher');
-
 var settings = require('../settings');
 var ConsulDaemon = require('../daemons/consul');
 var consulDaemon = new ConsulDaemon();
 var Errors = require('../errors');
 var su = require('../utils/sys-utils');
-
-
 var consul = require('consul')();
-var config = require('../config').lookupEnvironment();
-var device = require('../device/device.manager');
-var node = require('../node/node');
 var Q = require('q');
-
 var Introspecter = require('../introspecter');
+var nodeInfo = require('../node');
+
+var daemonInstanceWatchHandler = require('../node/daemon-instance.watcher.js')
 
 var store = {
     kv: require('../store/kv'),
@@ -87,9 +83,13 @@ function start() {
     var ip = su.ip(settings.get('nic'));
     if (! ip) return Q.reject('No ip address could be resolved');
 
+    var id = su.id(settings.get('nic'));
+    if (! id) return Q.reject('No node id could be resolved');
+
     // -- construct the consul arguments
     var consul_args = [
         'agent',
+        '-node=' + id,
         '-advertise=' + ip,
         '-bootstrap-expect=' + settings.get('cluster_servers'),
         '-dc=' + settings.get('cluster_name'),
@@ -200,12 +200,12 @@ function registerNode(localIp, localPort) {
         logger.debug('Registered cluster session ' + sessionId);
 
         logger.debug('Start watching for containers on this node');
-        watcher.registerHandler('node.daemon', require('../node/daemon-instance.watcher.js'));
-        watches.node.container = watcher.watchChanges('node.daemon', consul.kv.get, { key: 'nodes/' + device.id + '/daemons', recurse: true });
+        watcher.registerHandler('node.daemon', daemonInstanceWatchHandler);
+        watches.node.container = watcher.watchChanges('node.daemon', consul.kv.get, { key: 'nodes/' + nodeInfo.id + '/daemons', recurse: true });
 
         logger.debug('Start watching for resources on this node');
         watcher.registerHandler('node.resource', require('../node/resource.watcher'));
-        watches.node.resource = watcher.watchChanges('node.resource', consul.kv.get, { key: 'nodes/' + device.id + '/resources', recurse: true });
+        watches.node.resource = watcher.watchChanges('node.resource', consul.kv.get, { key: 'nodes/' + nodeInfo.id + '/resources', recurse: true });
 
         logger.debug('Start watching for hive changes on this node');
         watcher.registerHandler('node.hive', require('../node/hive.watcher'));

@@ -1,161 +1,53 @@
-/**********************************************************************************************************************
- * Module dependencies
- *********************************************************************************************************************/
 var express = require('express'),
-    cors = require('cors'),
-    params = require('express-params'),
-    http = require('http'),
-    os = require('os'),
+    bodyParser = require('body-parser'),
+    morgan = require('morgan'),
+    errorhandler = require('errorhandler'),
     path = require('path'),
-    Services = require('./services'),
-    winston = require('winston'),
-    Q = require('q'),
-    Templater = require('./utils/templater'),
-    term = require('term.js'),
-    ShutdownHook = require('shutdown-hook'),
-    sleep = require('sleep');
+    cors = require('cors');
 
 var log4js = require('log4js');
-var logger = log4js.getLogger('server');
+var logger = log4js.getLogger('node');
 
-var Cluster = require('./cluster');
+var settings = require('./settings');
 
+var membershipService = require('./membership/membership.service');
 
-var store = {
-    kv: require('./store/kv'),
-    session: require('./store/session')
-};
+start();
 
-var mmcConfig = initializeMMCConfiguration();
+function start() {
+    var app = express();
 
-var consul = require('consul')();
+    app.set('port', settings.get('port', 7000));
 
-Cluster.start(mmcConfig.port).then(function() {
-    var app = initializeExpress();
-    app.use(term.middleware());
+    // -- initialize cors
+    app.use(cors({
+        origin: '*',
+        methods: 'GET,PUT,POST,PATCH,DELETE'
+    }));
 
-    var server = initializeHttpServer(app);
-    var io = require('socket.io').listen(server);
+    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(bodyParser.json());
 
-    // -- get the runtime environment
-    mmcConfig.environment = app.get('env');
+    app.use(express.static(path.join(__dirname, '../ui')));
 
-    //var services = initializeServices(mmcConfig, app);
+    app.use(app.router);
 
-    //services.task.registerDefaultTasks(services);
-
-    //var io = initializeSocketIO(server, services);
+    if (app.get('env') == 'development') {
+        app.use(morgan('combined'));
+        app.use(errorhandler());
+    }
 
     require('./api')(app);
 
-    server.listen(app.get('port'), function () {
-        winston.info('BigBoards-mmc listening on port ' + app.get('port'));
-    });
-}).fail(function(error) {
-    logger.error(error);
-    logger.error(error.stack);
-});
-
-process.on('uncaughtException', function(err) {
-    handleError(err);
-});
-
-function initializeMMCConfiguration() {
-    var config = require('./config').lookupEnvironment();
-
-    // -- read the environment variables which will allow configuration parameters to be overridden
-    if (process.env.DOCKER_REGISTRY) config.docker.registry = process.env.DOCKER_REGISTRY;
-    if (process.env.HIVE) config.docker.registry = process.env.HIVE;
-
-    return config;
-}
-
-function initializeHttpServer(app) {
-    return http.createServer(app);
-}
-
-function initializeExpress() {
-    var app = express();
-
-    params.extend(app);
-
-    var corsOptions = {
-        origin: '*',
-        methods: 'GET,PUT,POST,DELETE'
-    };
-
-    app.set('port', mmcConfig.port);
-    //app.use(function(req, res, next) {
-    //    res.header("Access-Control-Allow-Origin", "*");
-    //    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    //    next();
-    //});
-    app.use(cors(corsOptions));
-    app.use(express.bodyParser());
-    app.use(express.json());
-    app.use(express.static(path.join(__dirname, './ui')));
-    app.use(app.router);
-
-    // development only
-    if (mmcConfig.is_dev) {
-        app.use(express.logger('dev'));
-        app.use(express.errorHandler());
+    // -- start the node if it has been configured
+    if (membershipService.status().joined) {
+        logger.info("The node is already a member of the cluster. We can proceed with starting the cluster link");
+        membershipService.start();
     }
+
+    app.listen(app.get('port'), function() {
+        logger.info('Node API up and running on port ' + app.get('port'));
+    });
 
     return app;
 }
-
-function initializeSocketIO(server, services) {
-    var io = require('socket.io').listen(server);
-    //io.set('log level', 1); // reduce logging
-
-    // -- Initialize Socket.io communication
-    io.sockets.on('connection', function(socket) {
-        Services.Hex.io(socket, services);
-        Services.Settings.io(socket, services);
-        Services.Task.io(socket, services);
-        Services.Tutorials.io(socket, services);
-        Services.Registry.io(socket, services);
-    });
-
-    return io;
-}
-
-function initializeServices(mmcConfig, app) {
-    var templater = new Templater();
-    logger.info('Service Registration:');
-
-    var services = {};
-
-    services.task = new Services.Task.Service(mmcConfig);
-    Services.Task.link(app, services);
-
-    services.settings = new Services.Settings.Service(mmcConfig);
-    Services.Settings.link(app, services);
-
-    services.hex = new Services.Hex.Service(mmcConfig, templater, services);
-    Services.Hex.link(app, services);
-
-    services.tutorials = new Services.Tutorials.Service(mmcConfig, services, templater);
-    Services.Tutorials.link(app, services);
-
-    services.registry = new Services.Registry.Service(mmcConfig);
-    Services.Registry.link(app, services);
-
-    return services;
-}
-
-function handleError(error) {
-    // TODO must we console-log the message? Or only winston-log it?
-//    var msg = JSON.stringify(error);
-    logger.error(error.message);
-
-    if (error.code == 'EADDRINFO')
-        return;
-
-    switch (error.errorCode) {
-        default:
-            logger.error(error.stack);
-    }
-}
-

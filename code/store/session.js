@@ -13,7 +13,7 @@ module.exports = {
 function createSession(name, behaviour) {
     var defer = Q.defer();
 
-    consul.session.create({behaviour: behaviour, name: name, ttl: '60s'}, function(err, result) {
+    consul.session.create({behaviour: behaviour, name: name, ttl: '60s', lockdelay: '1s'}, function(err, result) {
         return (err) ? defer.reject(err) : defer.resolve(result.ID);
     });
 
@@ -31,6 +31,8 @@ function renewSession(sessionId) {
 }
 
 function invalidateSession(sessionId) {
+    if (! sessionId) return Q(true);
+
     logger.info("invalidating session " + sessionId);
     var defer = Q.defer();
 

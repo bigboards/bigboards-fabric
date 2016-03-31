@@ -1,9 +1,0 @@
----
-- hosts: all:!localhost
-  sudo: yes
-  tasks:
-    - name: be sure docker.io is stopped
-      service: name="docker.io" state=stopped
-
-    - name: be sure the filesystem is synced
-      shell: sync && sync

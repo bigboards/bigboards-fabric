@@ -2,7 +2,7 @@ var Docker = require('dockerode'),
     Log4js = require('log4js'),
     du = require('./docker-utils'),
     sh = require('../utils/sh-utils'),
-    device = require('../device/device.manager'),
+    nodeInfo = require('../node'),
     kv = require('../store/kv');
 
 var config = require('../config').lookupEnvironment();
@@ -142,37 +142,10 @@ function _createVolumeMounts(container) {
     return Q.all(promises);
 }
 
-//function _removeResources(task) {
-//    var resource = {
-//        target: config.paths.data + '/tasks/' + task.id + '/config'
-//    };
-//
-//    resourceWorker.dispose(resource);
-//}
-//
-//function _deregisterFromConsul(task) {
-//    return cu.service.deregister(daemons.consul.client(), task.id + '.' + device.id);
-//}
-
-//function registerWithConsul(container) {
-//    var service = {
-//        "ID": container.name + '.' + device.id,
-//        "Name": container.name,
-//        "Tags": [ container ],
-//        "Address": device.ip,
-//        "Check": {
-//            "Script": config.home + "/checks/check_docker_container.sh",
-//            "Interval": "10s"
-//        }
-//    };
-//
-//    return cu.service.register(daemons.consul.client(), service);
-//}
-
 function createScope(container) {
     var variables = {
         config: config,
-        device: device,
+        device: nodeInfo,
         container_dir: config.dir.data + '/containers/' + container.name,
         container_config_dir: config.dir.data + '/containers/' + container.name + '/config',
         container_data_dir: config.dir.data + '/containers/' + container.name + '/data'

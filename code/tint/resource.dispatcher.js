@@ -5,8 +5,8 @@ var expression = require('../expression'),
     log4js = require('log4js');
 
 var logger = log4js.getLogger('dispatcher.resource');
-var device = require('../device/device.manager');
-var config = require('../config').lookupEnvironment();
+var nodeInfo = require('../node');
+var settings = require('../settings');
 
 module.exports = {
     install: {
@@ -69,7 +69,7 @@ function getNodesForTint(tint) {
 function installConfigurationResource(tint, nodes, resource) {
     var promises = [];
 
-    var tintFsDir = config.dir.data + '/tints/' + tu.id(tint) + '/resources';
+    var tintFsDir = settings.get('data_dir') + '/tints/' + tu.id(tint) + '/resources';
     var tintConfigDir = tintFsDir + '/' + resource.id;
 
     nodes.forEach(function(node) {
@@ -105,7 +105,7 @@ function installResourcesForContainerOnNode(tint, node, service, daemon) {
 }
 
 function installResourcesForContainerVolumeOnNode(tint, node, service, daemon, volume) {
-    var tintFsDir = config.dir.data + '/tints/' + tu.id(tint) + '/resources';
+    var tintFsDir = settings.get('data_dir') + '/tints/' + tu.id(tint) + '/resources';
 
     var filename;
     if (volume.Source.indexOf('resource:') == 0) {
@@ -166,11 +166,11 @@ function createScope(tint) {
     var tintId = tu.id(tint);
 
     var variables = {
-        config: config,
-        device: device,
-        data_dir: config.dir.data + '/tints/' + tintId + '/data',
-        resources_dir: config.dir.data + '/tints/' + tintId + '/resources',
-        config_dir: config.dir.data + '/tints/' + tintId + '/resources/config'
+        settings: settings.get('data_dir'),
+        device: nodeInfo,
+        data_dir: settings.get('data_dir') + '/tints/' + tintId + '/data',
+        resources_dir: settings.get('data_dir') + '/tints/' + tintId + '/resources',
+        config_dir: settings.get('data_dir') + '/tints/' + tintId + '/resources/config'
     };
 
     return variables;

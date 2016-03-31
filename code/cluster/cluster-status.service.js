@@ -4,7 +4,9 @@ var Q = require('q'),
     health = require('../store/health'),
     log4js = require('log4js');
 
-var logger = log4js.getLogger('service.status');
+var logger = log4js.getLogger('service.cluster.status');
+
+var settings = require('../settings');
 
 module.exports = {
     status: getStatus
@@ -15,6 +17,7 @@ function getStatus() {
 
     return Q.all([_getNodeStatus(), _getTintStatus()]).then(function(results) {
         return {
+            cluster: settings.get('cluster_name'),
             tints: results[1],
             nodes: results[0].nodes,
             containers: results[0].containers

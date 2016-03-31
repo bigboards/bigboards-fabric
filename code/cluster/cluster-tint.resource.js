@@ -1,5 +1,5 @@
-var API = require('./api-helper'),
-    TintService = require('../cluster/tint.service');
+var API = require('../api/api-helper'),
+    TintService = require('./cluster-tint.service');
 
 module.exports = {
     list: listTints,

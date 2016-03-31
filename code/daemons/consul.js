@@ -10,7 +10,7 @@ var sh = require('../utils/sh-utils'),
 
 var Errors = require('../errors');
 var logger = Log4js.getLogger('daemon.consul');
-
+var nodeInfo = require('../node');
 var settings = require('../settings');
 
 function Consul() {
@@ -83,9 +83,12 @@ Consul.prototype.start = function(args) {
             logger.error(data.toString('utf8'));
         });
 
+        var found = false;
+
         this.child.stdout.on('data', function (data) {
-            if (data.toString('utf8').indexOf('consul: New leader elected:') != -1) {
-                defer.resolve(true);
+            if (data.toString('utf8').indexOf('agent: Synced node info') != -1 && !found) {
+                found = true;
+                defer.resolve(Q.delay(1000));
             }
 
             logger.info(data.toString('utf8'));

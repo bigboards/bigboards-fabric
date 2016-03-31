@@ -7,6 +7,7 @@ if (! process.env.BB_FABRIC_CONFIG_FILE) {
 var settings = fs.readYamlFile(process.env.BB_FABRIC_CONFIG_FILE);
 
 module.exports = {
+    all: all,
     set: setProperty,
     has: hasProperty,
     get: getProperty,
@@ -35,4 +36,8 @@ function removeProperty(key) {
     delete settings[key];
 
     fs.writeYamlFile(process.env.BB_FABRIC_CONFIG_FILE, settings);
+}
+
+function all() {
+    return settings;
 }

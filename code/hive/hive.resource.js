@@ -1,5 +1,5 @@
-var API = require('./api-helper'),
-    HiveService = require('../cluster/hive.service');
+var API = require('../api/api-helper'),
+    HiveService = require('./hive.service');
 
 module.exports = {
     get: get,

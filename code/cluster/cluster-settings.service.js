@@ -4,7 +4,7 @@ var Q = require('q'),
     health = require('../store/health'),
     log4js = require('log4js');
 
-var logger = log4js.getLogger('service.settings');
+var logger = log4js.getLogger('service.cluster.settings');
 
 module.exports = {
     set: setSettings,

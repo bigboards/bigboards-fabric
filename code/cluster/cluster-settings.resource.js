@@ -1,5 +1,5 @@
-var API = require('./api-helper'),
-    SettingsService = require('../cluster/settings.service');
+var API = require('../api/api-helper'),
+    SettingsService = require('./cluster-settings.service');
 
 module.exports = {
     get: getSettings,

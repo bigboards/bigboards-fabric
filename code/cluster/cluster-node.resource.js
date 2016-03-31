@@ -1,5 +1,5 @@
-var API = require('./api-helper'),
-    NodeService = require('../cluster/node.service');
+var API = require('../api/api-helper'),
+    NodeService = require('./cluster-node.service');
 
 
 module.exports = {

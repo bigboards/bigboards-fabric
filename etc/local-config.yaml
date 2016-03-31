@@ -1,3 +1,10 @@
 port: 7000
 nic: wlp2s0
 data_dir: /tmp/data
+hive_host: hive.bigboards.io
+hive_port: 80
+cluster_key: ziN1OXB20wQTarp7tiqT2Q==
+cluster_name: test-cluster
+cluster_nodes: []
+cluster_role: server
+cluster_servers: 1

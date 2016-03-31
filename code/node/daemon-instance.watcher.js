@@ -1,10 +1,10 @@
-var device = require('../device/device.manager'),
-    kv = require('../store/kv'),
+var kv = require('../store/kv'),
     services = require('../store/services');
 
 var log4js = require('log4js');
 var logger = log4js.getLogger('watcher.node.container');
 var node = require('./node');
+var nodeInfo = require('./index');
 
 module.exports = {
     created: created,
@@ -69,6 +69,6 @@ function cleanup() {
     return node.container.remove.all()
         .then(function() {
             logger.debug('Removing all daemon instances from consul');
-            return kv.remove.prefix('nodes/' + device.id + '/daemons');
+            return kv.remove.prefix('nodes/' + nodeInfo.id + '/daemons');
         });
 }

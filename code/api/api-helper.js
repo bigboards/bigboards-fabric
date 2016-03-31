@@ -10,7 +10,15 @@ module.exports = {
         put: registerPut,
         post: registerPost,
         patch: registerPatch,
-        delete: registerDelete
+        delete: registerDelete,
+        guarded: {
+            head: registerGuardedHead,
+            get: registerGuardedGet,
+            put: registerGuardedPut,
+            post: registerGuardedPost,
+            patch: registerGuardedPatch,
+            delete: registerGuardedDelete
+        }
     },
     handle: {
         service: handleServiceCall,
@@ -45,6 +53,36 @@ function registerPatch(app, path, fn) {
 
 function registerDelete(app, path, fn) {
     app.delete(path, function(req, res) { return fn(req, res); });
+    logger.info('[DELETE] ' + path);
+}
+
+function registerGuardedHead(app, path, guard, fn) {
+    app.head(path, guard, function(req, res) { return fn(req, res); });
+    logger.info('   [HEAD] ' + path);
+}
+
+function registerGuardedGet(app, path, guard, fn) {
+    app.get(path, guard, function(req, res) { return fn(req, res); });
+    logger.info('   [GET] ' + path);
+}
+
+function registerGuardedPut(app, path, guard, fn) {
+    app.put(path, guard, function(req, res) { return fn(req, res); });
+    logger.info('    [PUT] ' + path);
+}
+
+function registerGuardedPost(app, path, guard, fn) {
+    app.post(path, guard, function(req, res) { return fn(req, res); });
+    logger.info('   [POST] ' + path);
+}
+
+function registerGuardedPatch(app, path, guard, fn) {
+    app.patch(path, guard, function(req, res) { return fn(req, res); });
+    logger.info('   [PATCH] ' + path);
+}
+
+function registerGuardedDelete(app, path, guard, fn) {
+    app.delete(path, guard, function(req, res) { return fn(req, res); });
     logger.info('[DELETE] ' + path);
 }
 

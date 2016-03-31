@@ -6,8 +6,6 @@ var gift = require('gift'),
     kv = require('../../store/kv');
 
 var logger = log4js.getLogger('resource.dispatcher.git');
-var device = require('../../device/device.manager');
-var config = require('../../config').lookupEnvironment();
 
 module.exports = {
     toConsul: toConsul
@@ -19,7 +17,7 @@ function toConsul(keyPrefix, configuration) {
     if (! url) return Q.reject('No url has been set for the git repository');
 
     logger.debug('do a checkout to a temporary folder');
-    return clone(url, path, device.firmware)
+    return clone(url, path, configuration.branch)
         .then(function() {
             logger.debug('iterate through the files and for each file, put it in consul');
 
@@ -67,7 +65,7 @@ function generateFile(keyPrefix, kvPath, fsPath, file) {
     return defer.promise;
 }
 
-function clone(repoUrl, repoPath, firmware) {
+function clone(repoUrl, repoPath, branch) {
     var defer = Q.defer();
 
     fu.rmdir(repoPath);
@@ -78,15 +76,14 @@ function clone(repoUrl, repoPath, firmware) {
         if (err) defer.reject(err);
 
         // -- try to checkout the branch with the current firmware
-        logger.debug("Checking if a firmware branch is available for firmware " + firmware);
-        repo.checkout(firmware, function(err) {
+        repo.checkout(branch, function(err) {
             if (err) {
-                logger.debug("Using the master as configuration branch " + firmware);
+                logger.debug("Using the master as configuration branch ");
                 defer.resolve(repo);
             } else {
-                logger.debug("Using configuration branch " + firmware);
+                logger.debug("Using configuration branch " + branch);
 
-                repo.checkout(firmware, function(err) {
+                repo.checkout(branch, function(err) {
                     if (err) defer.reject(err);
                     else defer.resolve(repo);
                 });
