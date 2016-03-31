@@ -23,11 +23,11 @@ function created(daemonInstance, key) {
     logger.debug('Creating daemon instance ' + daemonInstance.id);
 
     var serviceDescriptor = {
-        name: daemonInstance.id,
-        id: daemonInstance.id,
+        name: daemonInstance.daemon,
+        id: daemonInstance.service + '-' + daemonInstance.daemon,
         tags: [ 'docker', daemonInstance.daemon ],
         check: {
-            script: __dirname + '/../../scripts/check_docker_container.sh ' + daemonInstance.id,
+            script: process.cwd() + '/scripts/check_docker_container.sh ' + daemonInstance.id,
             interval: '15s'
         }
     };

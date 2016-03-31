@@ -1,9 +1,11 @@
 var Q = require('q');
 var consul = require('consul')();
+var catalog = require('../store/catalog');
 
 module.exports = {
     register: registerService,
-    deregister: deregisterService
+    deregister: deregisterService,
+    nodes: listNodesForService
 };
 
 function registerService(service) {
@@ -28,4 +30,16 @@ function deregisterService(serviceId) {
     });
 
     return defer.promise;
+}
+
+function listNodesForService(serviceId) {
+    return catalog.serviceNodes(serviceId).then(function(results) {
+        var list = [];
+
+        results.forEach(function(result) {
+            list.push({name: result.Node, address: result.Address});
+        });
+
+        return list;
+    })
 }

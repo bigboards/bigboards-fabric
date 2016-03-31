@@ -16,9 +16,9 @@
       "id": "elasticsearch",
       "daemons": [
         {
-          "name": "es",
+          "name": "elasticsearch",
           "instances": "all",
-          "id": "es",
+          "id": "elasticsearch",
           "driver": "docker",
           "configuration": {
             "Image": "bigboards/elasticsearch-x86_64",
@@ -26,7 +26,6 @@
               "9200/tcp": [{ "HostPort": "9200" }],
               "9300/tcp": [{ "HostPort": "9300" }]
             },
-            "User": "elasticsearch",
             "Cmd": "/elasticsearch/bin/elasticsearch",
             "Mounts": [
               {
@@ -47,6 +46,19 @@
         "url": "https://github.com/bigboards/bb-stack-elasticsearch.git"
       },
       "id": "config"
+    }
+  ],
+  "views": [
+    {
+      "type": "web",
+      "name": "Kopf",
+      "description": "A simple ui to manage elasticsearch",
+      "service": "elasticsearch",
+      "daemon": "elasticsearch",
+      "port": "9200",
+      "protocol": "http",
+      "path": "/_plugins/kopf",
+      "multiplicity": "one"
     }
   ]
 }

@@ -53,6 +53,7 @@ function installDaemon(tint, service, daemon) {
 function installDaemonForNode(tint, node, service, daemon, sequence) {
     var daemonInstance = {
         id: service.id + '-' + daemon.id + '-' + sequence,
+        service: service.id,
         daemon: daemon.id,
         driver: daemon.driver,
         instances: daemon.instances,

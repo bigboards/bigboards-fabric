@@ -7,6 +7,7 @@ var resources = {
     hive: require('../hive/hive.resource'),
     cluster: {
         status: require('../cluster/cluster-status.resource'),
+        service: require('../cluster/cluster-service.resource'),
         setting: require('../cluster/cluster-settings.resource'),
         node: require('../cluster/cluster-node.resource'),
         tint: require('../cluster/cluster-tint.resource')
@@ -24,6 +25,8 @@ module.exports = function(app) {
     API.register.delete(app, '/v1/membership/status', resources.membership.stop);
 
     API.register.guarded.get(app, '/v1/cluster', scopeMiddleware, resources.cluster.status.get);
+
+    API.register.guarded.get(app, '/v1/cluster/services', scopeMiddleware, resources.cluster.service.list);
 
     API.register.guarded.get(app, '/v1/cluster/settings', scopeMiddleware, resources.cluster.setting.get);
     API.register.guarded.post(app, '/v1/cluster/settings', scopeMiddleware, resources.cluster.setting.set);

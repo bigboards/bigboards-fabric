@@ -2,7 +2,8 @@ var Q = require('q');
 var consul = require('consul')();
 
 module.exports = {
-    node: getNodeHealth
+    node: getNodeHealth,
+    service: getServiceHealth
 };
 
 function getNodeHealth(nodeId) {
@@ -30,6 +31,43 @@ function getNodeHealth(nodeId) {
             }
 
             res.push(i);
+        });
+
+        defer.resolve(res);
+    });
+
+    return defer.promise;
+}
+
+function getServiceHealth(service, tag) {
+    var defer = Q.defer();
+
+    var opts = {
+        service: service
+    };
+
+    if (tag) opts.tag = tag;
+
+    consul.health.service(opts, function(err, result) {
+        if (err) return defer.reject(err);
+
+        var res = {
+            service: service,
+            nodes: {}
+        };
+
+        result.forEach(function(nodeServiceStatus) {
+            var node = nodeServiceStatus.Node.Node;
+
+            nodeServiceStatus.Checks.forEach(function(item) {
+                res.nodes[node] = {
+                    checkId: item.CheckID,
+                    name: item.Name,
+                    status: item.Status,
+                    notes: item.Notes,
+                    output: item.Output
+                };
+            })
         });
 
         defer.resolve(res);

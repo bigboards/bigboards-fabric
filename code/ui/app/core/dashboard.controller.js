@@ -1,8 +1,8 @@
 angular.module('mmc').controller('DashboardController', DashboardController);
 
-DashboardController.$inject = ['$mdSidenav', '$location', 'Page', 'NodeService', 'TintService', 'StatusService'];
+DashboardController.$inject = ['$mdSidenav', '$location', 'Page', 'NodeService', 'TintService', 'StatusService', 'ServiceService'];
 
-function DashboardController($mdSidenav, $location, Page, NodeService, TintService, StatusService) {
+function DashboardController($mdSidenav, $location, Page, NodeService, TintService, StatusService, ServiceService) {
     var vm = this;
 
     Page.setTitle('Dashboard');
@@ -11,6 +11,11 @@ function DashboardController($mdSidenav, $location, Page, NodeService, TintServi
     vm.nodes = [];
     vm.tints = [];
     vm.status = {};
+    vm.services = {};
+
+    ServiceService.list().then(function(services) {
+        vm.services = services;
+    });
 
     NodeService.list().then(function(nodes) {
         vm.nodes = nodes;

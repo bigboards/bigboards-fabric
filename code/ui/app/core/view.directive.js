@@ -2,8 +2,7 @@ angular.module('mmc').directive('bbTintView', function() {
     return {
         restrict: 'E',
         scope: {
-            view: '=',
-            nodes: '='
+            view: '='
         },
         templateUrl: 'app/core/view.directive.html',
         controller: TintViewController,
@@ -17,5 +16,4 @@ TintViewController.$inject = [];
 function TintViewController() {
     var vm = this;
 
-    var url = vm.view.url;
 }

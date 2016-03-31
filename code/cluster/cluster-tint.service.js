@@ -1,5 +1,6 @@
 var Q = require('q'),
     kv = require('../store/kv'),
+    services = require('../store/services'),
     catalog = require('../store/catalog'),
     health = require('../store/health'),
     log4js = require('log4js'),
@@ -49,11 +50,47 @@ function _getTintListItem(tintPath) {
 }
 
 function _getExtendedTintDetail(tintPath) {
-    return Q.all([
-        kv.get.key(tintPath)
-    ]).then(function(results) {
-        var result = results[0];
+    return kv.get.key(tintPath).then(function(tint) {
+        return _getViewInstances(tint).then(function(views) {
+            tint.views = views;
 
-        return result;
+            return tint;
+        })
     });
+}
+
+function _getViewInstances(tint) {
+    var promises = [];
+
+    if (tint.views) {
+        tint.views.forEach(function(view) {
+            promises.push(services.nodes(view.daemon).then(function(nodes) {
+                var result = {
+                    name: view.name,
+                    description: view.description,
+                    type: view.type
+                };
+
+                if (view.multiplicity == 'one' || nodes.length == 1) {
+                    result.instance = {
+                        host: nodes[0].name,
+                        uri: view.protocol + '://' + nodes[0].address + ':' + view.port + view.path
+                    }
+                } else {
+                    result.instances = [];
+
+                    nodes.forEach(function(node) {
+                        result.instances.push({
+                            host: node.name,
+                            uri: view.protocol + '://' + node.address + ':' + view.port + view.path
+                        })
+                    });
+                }
+
+                return result;
+            }));
+        });
+    }
+
+    return Q.all(promises);
 }

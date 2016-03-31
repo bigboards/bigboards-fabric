@@ -1,18 +1,20 @@
 <md-content class="view-container" layout="row" layout-padding flex>
-    <md-content layout="column" flex>
-        <md-content class="md-whiteframe-z1 white" ng-repeat="tint in vm.tints" ng-click="vm.goto(tint)" layout="column" layout-align="start stretch" flex>
-            <div layout="row" layout-align="start center" style="height: 100%;">
-                <img ng-src="{{tint.logo}}" style="max-width: 100px; max-height: 100px;" />
-                <div layout="column">
-                    <span class="md-title">{{ tint.name }}</span>
-                    <span class="md-subhead">{{ tint.owner_name }}</span>
+    <div layout="row" flex>
+        <md-content ng-repeat="tint in vm.tints" ng-click="vm.goto(tint)" layout="column" layout-align="start stretch" layout-padding flex>
+            <div>
+                <div class="md-whiteframe-z1" layout="row" layout-align="start center" layout-padding>
+                    <img ng-src="{{tint.logo}}" style="max-width: 100px; max-height: 100px;" />
+                    <div layout="column">
+                        <span class="md-title">{{ tint.name }}</span>
+                        <span class="md-body-1">{{ tint.profile.name }}</span>
+                        <p class="md-caption">{{ tint.description }}</p>
+                    </div>
                 </div>
+                <bb-tint-view view="view" ng-repeat="view in tint.views"></bb-tint-view>
+                <bb-service service-name="serviceName" service-data="serviceData" ng-repeat="(serviceName, serviceData) in vm.services"></bb-service>
             </div>
-            <span flex></span>
-            <bb-tint-view view="view" ng-repeat="view in tint.stack.views"></bb-tint-view>
-            <bb-container container="container" container-status="vm.status.containers[container.name]" ng-repeat="container in tint.stack.containers"></bb-container>
         </md-content>
-    </md-content>
+    </div>
 
     <md-content layout="column" flex>
         <md-card ng-repeat="node in vm.nodes" style="max-width: 440px; min-width: 440px;" ng-click="vm.goto(node)">
@@ -28,7 +30,7 @@
             <md-card-content md-layout="row" class="md-warn">
                 <div flex layout="row" layout-align="center center">
                     <div flex="33" layout="column" layout-align="center center">
-                        <span class="md-body">{{ node.cpus.length }}</span>
+                        <span class="md-body">{{ node.cores }}</span>
                         <span class="md-caption">cores</span>
                     </div>
 
