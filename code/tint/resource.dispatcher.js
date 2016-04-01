@@ -8,6 +8,9 @@ var logger = log4js.getLogger('dispatcher.resource');
 var nodeInfo = require('../node');
 var settings = require('../settings');
 
+var events = require('../store/events'),
+    eventNames = require('../event_names');
+
 module.exports = {
     install: {
         byTint: installResourceForTint
@@ -23,6 +26,7 @@ module.exports = {
 // ====================================================================================================================
 function installResourceForTint(tint) {
     logger.debug('Installing resources for ' + tint.type + ' ' + tint.slug);
+
     getNodesForTint(tint)
         .then(function(nodes) {
             var promises = [];
@@ -73,7 +77,9 @@ function installConfigurationResource(tint, nodes, resource) {
     var tintConfigDir = tintFsDir + '/' + resource.id;
 
     nodes.forEach(function(node) {
-        promises.push(registerResourceOnNode(tint, node, resource.id, 'template', tintConfigDir, createScope(tint)));
+        promises.push(
+            registerResourceOnNode(tint, node, resource.id, 'template', tintConfigDir, createScope(tint))
+        );
     });
 
     return Q.all(promises);
@@ -93,13 +99,17 @@ function installResourcesForContainerOnNode(tint, node, service, daemon) {
     logger.debug('create the resources needed by the service daemon');
 
     var volumes = daemon.configuration.Mounts;
-    if (!volumes) return Q();
 
     logger.debug('Iterate the volumes as they are defined in the daemon configuration');
     var promises = [];
-    volumes.forEach(function(volume) {
-        promises.push(installResourcesForContainerVolumeOnNode(tint, node, service, daemon, volume))
-    });
+
+    if (volumes) {
+        volumes.forEach(function (volume) {
+            promises.push(
+                installResourcesForContainerVolumeOnNode(tint, node, service, daemon, volume)
+            )
+        });
+    }
 
     return Q.all(promises);
 }
@@ -129,7 +139,12 @@ function removeResources() {
         var promises = [];
 
         nodes.forEach(function(node) {
-            promises.push(kv.multiflag('nodes/' + node + '/resources', 999));
+
+
+            promises.push(
+                kv.multiflag('nodes/' + node + '/resources', 999)
+                    .then(function() { events.fire(eventNames.RESOURCE_CLEANUP_PENDING, { node: node });})
+            );
         });
 
         return Q.all(promises);
@@ -150,16 +165,23 @@ function removeTintResources(tint) {
 
 function removeTintResourcesOnNode(tint, node) {
     logger.info('Flagging tint resources for removal');
-    return kv.multiflag('nodes/' + node.id + '/resources/' + tu.id(tint), 999);
+    return kv.multiflag('nodes/' + node.id + '/resources/' + tu.id(tint), 999).then(function() {
+        events.fire(eventNames.RESOURCE_UNINSTALL_PENDING, {tint: tu.id(tint), node: node.id});
+    });
 }
 
 function registerResourceOnNode(tint, node, resourceName, resourceType, resourceFsPath, resourceScope) {
     return kv.set('nodes/' + node.id + '/resources/' + tu.id(tint) + '/' + resourceName, {
+        id: resourceName,
         type: resourceType,
+        tint: tu.id(tint),
+        node: node.id,
         consulPath: 'resources/' + tu.id(tint) + '/' + resourceName,
         fsPath: resourceFsPath,
         scope: resourceScope
-    }, null, 0);
+    }, null, 0).then(function() {
+        events.fire(eventNames.RESOURCE_INSTALL_PENDING, {tint: tu.id(tint), resource: resourceName, node: node.id});
+    });
 }
 
 function createScope(tint) {

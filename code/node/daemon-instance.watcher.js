@@ -6,6 +6,9 @@ var logger = log4js.getLogger('watcher.node.container');
 var node = require('./node');
 var nodeInfo = require('./index');
 
+var events = require('../store/events'),
+    eventNames = require('../event_names');
+
 module.exports = {
     created: created,
     ready: ready,
@@ -49,7 +52,14 @@ function created(daemonInstance, key) {
     }).then(function() {
         logger.debug('Flagging the daemon instance ' + daemonInstance.id + ' as ready');
         return kv.flag(key, 2);
-    });
+    }).then(
+        function() { events.fire(eventNames.DAEMON_INSTALL_SUCCESS, {tint: daemonInstance.tint, node: nodeInfo.id, service: daemonInstance.service, daemon: daemonInstance.id}); },
+        function(error) {
+            logger.error(error);
+            events.fire(eventNames.DAEMON_INSTALL_FAILED, {tint: daemonInstance.tint, node: nodeInfo.id, service: daemonInstance.service, daemon: daemonInstance.id, error: error.message});
+            events.fire(eventNames.TINT_INSTALL_FAILED, {tint: daemonInstance.tint, error: error.message});
+        }
+    );
 }
 
 function removed(daemonInstance, key) {
@@ -61,7 +71,14 @@ function removed(daemonInstance, key) {
             return kv.remove.key(key);
         }).then(function() {
             return services.deregister(daemonInstance.id);
-        });
+        }).then(
+            function() { events.fire(eventNames.DAEMON_UNINSTALL_SUCCESS, {tint: daemonInstance.tint, node: nodeInfo.id, service: daemonInstance.service, daemon: daemonInstance.id}); },
+            function(error) {
+                logger.error(error);
+                events.fire(eventNames.DAEMON_UNINSTALL_FAILED, {tint: daemonInstance.tint, node: nodeInfo.id, service: daemonInstance.service, daemon: daemonInstance.id, error: error.message});
+                events.fire(eventNames.TINT_UNINSTALL_FAILED, {tint: daemonInstance.tint, error: error.message});
+            }
+        );
 }
 
 function cleanup() {
@@ -70,5 +87,8 @@ function cleanup() {
         .then(function() {
             logger.debug('Removing all daemon instances from consul');
             return kv.remove.prefix('nodes/' + nodeInfo.id + '/daemons');
-        });
+        }).then(
+            function() { events.fire(eventNames.DAEMON_CLEANUP_SUCCESS, {node: nodeInfo.id}); },
+            function(error) { events.fire(eventNames.DAEMON_CLEANUP_FAILED, {node: nodeInfo.id, error: error.message}); }
+        );
 }

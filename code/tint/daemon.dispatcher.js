@@ -4,6 +4,9 @@ var expression = require('../expression'),
     Q = require('q'),
     log4js = require('log4js');
 
+var events = require('../store/events'),
+    eventNames = require('../event_names');
+
 var logger = log4js.getLogger('dispatcher.daemon');
 var containerModelMapper = require('../model/container/v2.0');
 
@@ -61,7 +64,9 @@ function installDaemonForNode(tint, node, service, daemon, sequence) {
     };
 
     logger.debug('scheduled daemon ' + daemon.id + ' onto node ' + node.id + ' as container ' + daemonInstance.id);
-    return kv.set('nodes/' + node.id + '/daemons/' + tu.id(tint) + '/' + daemonInstance.id, daemonInstance, null, 0)
+    return kv.set('nodes/' + node.id + '/daemons/' + tu.id(tint) + '/' + daemonInstance.id, daemonInstance, null, 0).then(function() {
+        events.fire(eventNames.DAEMON_INSTALL_PENDING, { tint: tu.id(tint), service: service.id, daemon: daemon.id, node: node.id});
+    })
 }
 
 // ====================================================================================================================
@@ -73,7 +78,9 @@ function removeDaemons() {
         var promises = [];
 
         nodes.forEach(function(node) {
-            promises.push(kv.multiflag('nodes/' + node + '/daemons', 999));
+            promises.push(kv.multiflag('nodes/' + node + '/daemons', 999).then(function() {
+                events.fire(eventNames.DAEMON_CLEANUP_PENDING, { node: node });
+            }));
         });
 
         return Q.all(promises);
@@ -88,7 +95,9 @@ function removeDaemonsForTint(tint) {
 
         nodes.forEach(function(node) {
             if (node.lastIndexOf('/') == node.length - 1) {
-                promises.push(kv.multiflag(node + 'daemons/' + tu.id(tint), 999));
+                promises.push(kv.multiflag(node + 'daemons/' + tu.id(tint), 999).then(function() {
+                    events.fire(eventNames.DAEMON_UNINSTALL_PENDING, { node: node, tint: tu.id(tint) });
+                }));
             }
         });
 

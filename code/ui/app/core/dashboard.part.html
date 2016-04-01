@@ -1,5 +1,5 @@
 <md-content class="view-container" layout="row" layout-padding flex>
-    <div layout="row" flex>
+    <div layout="column" flex>
         <md-content ng-repeat="tint in vm.tints" layout="column" layout-align="start stretch" layout-padding flex>
             <div>
                 <div class="md-whiteframe-z1" layout="row" layout-align="start center" layout-padding>
@@ -46,6 +46,20 @@
                 </div>
             </md-card-content>
         </md-card>
+    </md-content>
+
+    <md-content layout="column" class="md-whiteframe-z1" style="max-width: 300px; width: 300px;">
+        <md-list>
+            <md-list-item class="md-3-line" ng-repeat="event in vm.events | orderBy:'sequence':'true'" ng-click="null">
+                <md-icon md-font-icon="lnr-check" class="lnr md-avatar"></md-icon>
+                <div class="md-list-item-text" layout="column">
+                    <h3>{{ event.data.node }}</h3>
+                    <h4>{{ event.event }}</h4>
+                    <p>{{ ( event.data.error ) ? event.data.error : '' }}</p>
+                </div>
+                <md-divider></md-divider>
+            </md-list-item>
+        </md-list>
     </md-content>
 </md-content>
 

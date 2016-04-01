@@ -16,6 +16,8 @@ start();
 
 function start() {
     var app = express();
+    var server = require('http').Server(app);
+    var io = require('socket.io')(server);
 
     app.set('port', settings.get('port', 7000));
 
@@ -37,7 +39,7 @@ function start() {
         app.use(errorhandler());
     }
 
-    require('./api')(app);
+    require('./api')(app, io);
 
     // -- start the node if it has been configured
     if (membershipService.status().joined) {

@@ -5,6 +5,9 @@ var logger = log4js.getLogger('watcher.node.resource');
 var node = require('./node');
 var nodeInfo = require('./index');
 
+var events = require('../store/events'),
+    eventNames = require('../event_names');
+
 module.exports = {
     created: created,
     removed: removed,
@@ -16,10 +19,16 @@ function created(resourceDefinition, key) {
     return node.resource.create(resourceDefinition)
         .then(function() {
             logger.debug('Flagging the resource ' + resourceDefinition.fsPath + ' as ready');
-            return kv.flag(key, 2);
-        }).fail(function(error) {
-            logger.error(error);
-        });
+
+            return kv.flag(key, 2)
+        }).then(
+            function() { events.fire(eventNames.RESOURCE_INSTALL_SUCCESS, {tint: resourceDefinition.tint, node: resourceDefinition.node, resource: resourceDefinition.id}); },
+            function(error) {
+                logger.error(error);
+                events.fire(eventNames.RESOURCE_INSTALL_FAILED, {tint: resourceDefinition.tint, node: resourceDefinition.node, resource: resourceDefinition.id, error: error.message});
+                events.fire(eventNames.TINT_INSTALL_FAILED, {tint: resourceDefinition.tint, error: error.message});
+            }
+        );
 }
 
 function removed(resourceDefinition, key) {
@@ -28,7 +37,13 @@ function removed(resourceDefinition, key) {
         .then(function() {
             logger.debug('Removing the resource ' + resourceDefinition.fsPath + ' from consul');
             return kv.remove.prefix(key);
-        });
+        }).then(
+            function() { events.fire(eventNames.RESOURCE_UNINSTALL_SUCCESS, {tint: resourceDefinition.tint, node: resourceDefinition.node, resource: resourceDefinition.id}); },
+            function(error) {
+                events.fire(eventNames.RESOURCE_UNINSTALL_FAILED, {tint: resourceDefinition.tint, node: resourceDefinition.node, resource: resourceDefinition.id, error: error.message});
+                events.fire(eventNames.TINT_UNINSTALL_FAILED, {tint: resourceDefinition.tint, error: error.message});
+            }
+        );
 }
 
 function cleanup() {
@@ -37,5 +52,8 @@ function cleanup() {
         .then(function(data) {
             logger.debug('Removing all resources from consul');
             return kv.remove.prefix('nodes/' + nodeInfo.id + '/resources');
-        });
+        }).then(
+            function() { events.fire(eventNames.RESOURCE_CLEANUP_SUCCESS, {node: nodeInfo.id}); },
+            function(error) { events.fire(eventNames.RESOURCE_CLEANUP_FAILED, {node: nodeInfo.id, error: error.message}); }
+        );
 }
