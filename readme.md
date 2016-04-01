@@ -68,8 +68,8 @@ Make this node a member of a cluster. For this a specific payload has to be prov
   "name": "",       // the name of your cluster ([a-Z,0-9,-,_]
   "key": "",        // the encryption token used for the cluster
   "role": "",       // the role this node would take in this cluster (server or client)
-  "nodes": [ ],     // a list of other nodes that are part of the cluster
-  "servers": 2      // the number of servers there are to be in total (max. 5)
+  "nodes": [ ],     // a list of other nodes that are part of the cluster (min. 1)
+  "servers": 2      // the number of quorum members (max. 5) in the cluster; must be identical for all members!
 }
 ```
 
