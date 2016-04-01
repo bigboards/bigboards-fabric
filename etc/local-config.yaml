@@ -5,6 +5,7 @@ hive_host: hive.bigboards.io
 hive_port: 80
 cluster_key: ziN1OXB20wQTarp7tiqT2Q==
 cluster_name: test-cluster
-cluster_nodes: []
+cluster_nodes:
+  - 10.10.1.117
 cluster_role: server
-cluster_servers: 1
+cluster_servers: 2
