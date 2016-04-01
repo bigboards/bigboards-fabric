@@ -40,8 +40,9 @@ hive_port: 80
 
 ## Current Status
 Currently we are able to set up clusters in our lab environment running all intel 
-nodes using ubuntu 14.04 LTS. ARM nodes have not been tested yet, neither have other 
-Operating Systems.
+nodes using ubuntu 14.04 LTS. 
+
+ARM nodes have not been tested yet, neither have other Operating Systems.
 
 ## Roadmap
  - Test on Intel
@@ -52,7 +53,7 @@ Operating Systems.
  - Gather feedback and see how we can improve
 
 ## API
-Descent API documentation is on the todo list, For now a list of the endpoints can be found here.
+Decent API documentation is on the todo list, For now a list of the endpoints can be found here.
 
 ### Node Status
 #### GET /v1/status
