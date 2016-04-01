@@ -1,11 +1,12 @@
-VERSION ?= "snapshot"
+VERSION ?= 2.0
 ARCH = $(shell uname -m)
-PROJECT = "bigboards-fabric"
+PROJECT = bigboards-fabric
 
 all: dependencies package-deb
 
 clean:
 	rm -rf code/node_modules
+	rm -rf code/local
 	rm -rf code/ui/bower_components
 
 dependencies:
@@ -19,10 +20,12 @@ install:
 
 package-deb:
 	rm -rf /tmp/$(PROJECT)
-	rsync -a deb/deb-src /tmp/$(PROJECT)
-	rsync -a code/* /tmp/$(PROJECT)/sysroot/usr/share/$(PROJECT)/
+	rsync -a deb/deb-src/* /tmp/$(PROJECT)
+	rsync -a code /tmp/$(PROJECT)/sysroot/usr/share/$(PROJECT)/
+	rsync -a lib /tmp/$(PROJECT)/sysroot/usr/share/$(PROJECT)/
 	echo "${VERSION}" > /tmp/$(PROJECT)/sysroot/usr/share/$(PROJECT)/VERSION
 	cd /tmp/$(PROJECT)/sysroot ; tar czf ../data.tar.gz *
 	cd /tmp/$(PROJECT)/DEBIAN ; tar czf ../control.tar.gz *
 	echo 2.0 > /tmp/$(PROJECT)/debian-binary
-	cd /tmp/$(PROJECT)c; ar r ../$(PROJECT)-$(VERSION)-$(ARCH).deb debian-binary control.tar.gz data.tar.gz
+	cd /tmp/$(PROJECT); ar r ../$(PROJECT)-$(VERSION)-$(ARCH).deb debian-binary control.tar.gz data.tar.gz
+	cp /tmp/$(PROJECT)-$(VERSION)-$(ARCH).deb .

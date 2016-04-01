@@ -1,38 +1,37 @@
 #!/usr/bin/env bash
 
-# -- add the bigboards system user
-if id -u bb >/dev/null 2>&1; then
-        echo "user exists"
+# -- add the fabric system user
+if id -u bbfabric >/dev/null 2>&1; then
+        echo "The bbfabric user already exists. No need to create it."
 else
-        adduser --system bb
+        adduser --system bbfabric
 fi
 
-# -- create the bigboards tints directory
-sudo -u bb mkdir -p /opt/bb/tints.d
-mkdir -p /var/log/bigboards/tasks
-chown -R bb /var/log/bigboards
-chmod -R 777 /var/log/bigboards
+# -- create the fabric directory
+chown -R bbfabric /var/log/bigboards
+chmod -R 655 /var/log/bigboards
 
 # -- change the rights to the bigboards directory
-chown bb -R /opt/bb/runtimes/bigboards-mmc
+chown bbfabric -R /usr/share/bigboards-fabric
 
 if [ ! -e "/usr/local/bin/bower" ];
 then
     npm install bower -g
 fi
 
-pushd /opt/bb/runtimes/bigboards-mmc
+pushd /usr/share/bigboards-fabric/code
     # -- remove the old modules
-    rm -rf npm_modules
+    [ -e npm_modules ] && rm -rf npm_modules
+    [ -e node_modules ] && rm -rf node_modules
 
     # -- install the nodejs api dependencies
-    npm install
+    sudo -u bbfabric npm install
 popd
 
-pushd /opt/bb/runtimes/bigboards-mmc/client
+pushd /usr/share/bigboards-fabric/code/ui
     # -- remove the old modules
     rm -rf bower_components
 
     # -- make sure bower installs all dependencies
-    sudo -u bb bower install --config.interactive=false
+    sudo -u bbfabric bower install --config.interactive=false
 popd

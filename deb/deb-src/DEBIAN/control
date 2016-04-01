@@ -5,4 +5,5 @@ Priority: optional
 Architecture: all
 Depends:
 Maintainer: BigBoards <hello@bigboards.io>
-Description: The BigBoards Management Console
+Description: The BigBoards Fabric
+ An easy way to create clusters and deploy software stacks on top of them.

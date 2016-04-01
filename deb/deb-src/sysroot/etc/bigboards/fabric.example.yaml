@@ -1,0 +1,5 @@
+port: 7000
+nic: eth0
+data_dir: /tmp/fabric/data
+hive_host: hive.bigboards.io
+hive_port: 80
