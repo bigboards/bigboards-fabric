@@ -6,6 +6,14 @@ function NotFoundError(message) {
 NotFoundError.prototype = Object.create(Error.prototype);
 module.exports.NotFoundError = NotFoundError;
 
+function BadRequestError(message) {
+    this.name = "BadRequestError";
+    this.message = message;
+    this.stack = Error().stack;
+}
+BadRequestError.prototype = Object.create(Error.prototype);
+module.exports.BadRequestError = BadRequestError;
+
 function IllegalParameterError(message) {
     this.name = "IllegalParameterError";
     this.message = message;
@@ -45,3 +53,44 @@ function TintInstallationError(message) {
 }
 TintInstallationError.prototype = Object.create(Error.prototype);
 module.exports.TintInstallationError = TintInstallationError;
+
+function DaemonAlreadyRunningError(daemon) {
+    this.name = "DaemonAlreadyRunningError";
+    this.daemon = daemon;
+    this.stack = Error().stack;
+}
+DaemonAlreadyRunningError.prototype = Object.create(Error.prototype);
+module.exports.DaemonAlreadyRunningError = DaemonAlreadyRunningError;
+
+function DaemonNotRunningError(daemon) {
+    this.name = "DaemonNotRunningError";
+    this.daemon = daemon;
+    this.stack = Error().stack;
+}
+DaemonNotRunningError.prototype = Object.create(Error.prototype);
+module.exports.DaemonNotRunningError = DaemonNotRunningError;
+
+function DaemonAlreadyInstalledError(daemon) {
+    this.name = "DaemonAlreadyInstalledError";
+    this.daemon = daemon;
+    this.stack = Error().stack;
+}
+DaemonAlreadyInstalledError.prototype = Object.create(Error.prototype);
+module.exports.DaemonAlreadyInstalledError = DaemonAlreadyInstalledError;
+
+function DaemonNotInstalledError(daemon) {
+    this.name = "DaemonNotInstalledError";
+    this.daemon = daemon;
+    this.stack = Error().stack;
+}
+DaemonNotInstalledError.prototype = Object.create(Error.prototype);
+module.exports.DaemonNotInstalledError = DaemonNotInstalledError;
+
+function DaemonCommandMissing(daemon, command) {
+    this.name = "DaemonNotInstalledError";
+    this.daemon = daemon;
+    this.command = command;
+    this.stack = Error().stack;
+}
+DaemonCommandMissing.prototype = Object.create(Error.prototype);
+module.exports.DaemonCommandMissing = DaemonCommandMissing;

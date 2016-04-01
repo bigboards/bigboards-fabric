@@ -1,0 +1,64 @@
+{
+  "profile": {
+    "id": "google-oauth2-103728492012393057640",
+    "name": "Daan Gerits",
+    "email": "daan.gerits@bigboards.io"
+  },
+  "slug": "elasticsearch",
+  "name":"ElasticSearch",
+  "logo": "https://www.elastic.co/static/img/elastic-logo-200.png",
+  "description": "Search and analyze data in real-time",
+  "version": "2.2.0",
+  "services": [
+    {
+      "name": "ElasticSearch",
+      "description": "The ElasticSearch Engine",
+      "id": "elasticsearch",
+      "daemons": [
+        {
+          "name": "elasticsearch",
+          "instances": "all",
+          "id": "elasticsearch",
+          "driver": "docker",
+          "configuration": {
+            "Image": "bigboards/elasticsearch-x86_64",
+            "PortBindings": {
+              "9200/tcp": [{ "HostPort": "9200" }],
+              "9300/tcp": [{ "HostPort": "9300" }]
+            },
+            "Cmd": "/elasticsearch/bin/elasticsearch",
+            "Mounts": [
+              {
+                "Source": "resource:config/config/elasticsearch",
+                "Destination": "/elasticsearch/config",
+                "RW": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "provider": "git",
+      "settings": {
+        "url": "https://github.com/bigboards/bb-stack-elasticsearch.git"
+      },
+      "id": "config"
+    }
+  ],
+  "views": [
+    {
+      "type": "web",
+      "name": "Kopf",
+      "description": "A simple ui to manage elasticsearch",
+      "service": "elasticsearch",
+      "daemon": "elasticsearch",
+      "port": "9200",
+      "protocol": "http",
+      "path": "/_plugins/kopf",
+      "multiplicity": "one"
+    }
+  ]
+}

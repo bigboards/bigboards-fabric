@@ -1,0 +1,27 @@
+<md-content class="md-whiteframe-z1" layout-padding layout="row" layout-align="start center">
+    <div layout="column" flex>
+        <span style="font-weight:700"> {{ vm.serviceName }} </span>
+        <span style="font-size: small">service</span>
+    </div>
+
+    <div layout="column" class="m-8 p-8" style="min-width: 100px;">
+        <md-icon md-font-icon="lnr-shield-check" class="lnr"></md-icon>
+        <span class="md-caption" style="margin-top: 4px; text-align: center;">{{ vm.count.passing }}</span>
+        <md-tooltip>{{ vm.count.passing }} passing out of {{ vm.count.total }} instances</md-tooltip>
+    </div>
+    <div layout="column" class="m-8 p-8" style="min-width: 100px;">
+        <md-icon md-font-icon="lnr-shield-alert" class="lnr"></md-icon>
+        <span class="md-caption" style="margin-top: 4px; text-align: center;">{{ vm.count.warning }}</span>
+        <md-tooltip>{{ vm.count.warning }} with a warning status out of {{ vm.count.total }} instances</md-tooltip>
+    </div>
+    <div layout="column" class="m-8 p-8" style="min-width: 100px;">
+        <md-icon md-font-icon="lnr-shield-cross" class="lnr"></md-icon>
+        <span class="md-caption" style="margin-top: 4px; text-align: center;">{{ vm.count.critical }}</span>
+        <md-tooltip>{{ vm.count.critical }} with a critical status out of {{ vm.count.total }} instances</md-tooltip>
+    </div>
+    <div layout="column" class="m-8 p-8" style="min-width: 100px;">
+        <md-icon md-font-icon="lnr-shield" class="lnr"></md-icon>
+        <span class="md-caption" style="margin-top: 4px; text-align: center;">{{ vm.count.unknown }}</span>
+        <md-tooltip>{{ vm.count.unknown }} with an unknown status out of {{ vm.count.total }} instances</md-tooltip>
+    </div>
+</md-content>

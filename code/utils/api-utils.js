@@ -21,6 +21,7 @@ module.exports.handlePromise = function(res, promise) {
             return res.json(results);
         })
         .fail(function(error) {
+
             var msg = JSON.stringify(error, ['stack', 'message', 'inner'], 4);
 
             if (error.name == 'AlreadyExistsError') {

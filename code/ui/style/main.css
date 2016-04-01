@@ -1,0 +1,33 @@
+body {
+    background-color: #f1f1f1;
+}
+
+
+.bb-background {
+    background-image: url('/content/images/hex-bg-alt.svg');
+    background-repeat: no-repeat;
+    background-position: bottom right;
+    background-color: transparent;
+}
+
+md-content {
+    background-color: transparent;
+}
+
+md-sidenav {
+    min-width: 40%;
+}
+
+md-list .lnr {
+    line-height: 1.8;
+    background-color: transparent;
+}
+
+md-list .lnr.passing { color: green; }
+md-list .lnr.warning { color: orange; }
+md-list .lnr.critical { color: red; }
+
+.md-whiteframe-z1 { background-color: white; }
+.md-whiteframe-z2 { background-color: white; }
+.md-whiteframe-z3 { background-color: white; }
+.md-whiteframe-z4 { background-color: white; }

@@ -1,9 +1,0 @@
-description "[[ role.name ]] Docker Container"
-author "bigboards"
-start on filesystem and started docker.io
-stop on runlevel [!2345]
-respawn
-
-script
-	exec /usr/bin/docker start -a [[ role.name ]]
-end script

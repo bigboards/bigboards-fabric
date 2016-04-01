@@ -1,0 +1,19 @@
+<md-subhead class="m-t-8">Hive</md-subhead>
+<div layout="column" layout-align="start start">
+    <md-input-container layout="row" style="width: 100%;">
+        <label>Url</label>
+        <input type="text" ng-model="sc.settings.hive.api" ng-model-options="{ debounce: 1000 }" flex>
+    </md-input-container>
+    <div ng-if="sc.linkData.shortId">
+        <span display="md-display-1">{{ sc.linkData.shortId }}</span>
+
+        <md-button ng-click="sc.unlink()" class="md-primary">Disconnect from the hive</md-button>
+    </div>
+    <div ng-if="! sc.linkData.shortId">
+        <md-input-container layout="row" style="width: 100%;">
+            <label>Profile ShortId</label>
+            <input type="text" ng-model="sc.shortId" flex>
+        </md-input-container>
+        <md-button ng-click="sc.link()" class="md-primary">Link to the hive!</md-button>
+    </div>
+</div>

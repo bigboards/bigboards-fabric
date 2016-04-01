@@ -1,5 +1,10 @@
 var fsu = require('./fs-utils');
 
+module.exports.id = function(tint) {
+    return tint.profile.id + '$' + tint.slug;
+    //return tint.owner + '$' + tint.slug;
+};
+
 module.exports.parseManifest = function(hexService, templater, tintRoot, type, owner, slug) {
     var tintDir = tintRoot + '/' + type + '/' + owner + '/' + slug;
 
