@@ -27,7 +27,7 @@ module.exports = {
 function installResourceForTint(tint) {
     logger.debug('Installing resources for ' + tint.type + ' ' + tint.slug);
 
-    getNodesForTint(tint)
+    return getNodesForTint(tint)
         .then(function(nodes) {
             var promises = [];
 
