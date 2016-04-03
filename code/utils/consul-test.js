@@ -8,25 +8,11 @@ var logger = log4js.getLogger();
 
 logger.info('Registring the watch');
 //var keysWatch = registerWatch('keys', consul.kv.keys, {key: 'testDir', recurse: true});
-var getWatch = registerWatch('get', consul.kv.get, {key: 'testDir', recurse: true});
+var getWatch = registerWatch('get', consul.event.list, {name: 'test-event'});
 
 perform(function() {
-    logger.info('Adding a new key');
-    consul.kv.set({key: 'testDir/testKey', value: 'my data'}, errorHandler);
-})
-.then(function() {
-    return perform(function() {
-        logger.info('Update Flag');
-        consul.kv.set({key: 'testDir/testKey', value: 'my data', flags: 5}, errorHandler);
-    })
-})
-.then(function() {
-    return perform(function() {
-        logger.info('Removing a key');
-        consul.kv.del({key: 'testDir', recurse: true}, errorHandler);
-    })
-})
-.then(function() {
+    consul.event.fire('test-event', JSON.stringify({my: 'payload'}), errorHandler);
+}).then(function() {
     return perform(function() {
         logger.info('Removing the watch');
         getWatch.end();
@@ -51,7 +37,7 @@ function registerWatch(description, method, opts) {
     var watch = consul.watch({ method: method, options: opts});
 
     watch.on('change', function(data, res) {
-        logger.warn(description + ' change: ' + JSON.stringify(data));
+        logger.warn('received ' + description + ' change: ' + JSON.stringify(data));
     });
 
     watch.on('error', function(error) {

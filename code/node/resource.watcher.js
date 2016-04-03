@@ -5,7 +5,7 @@ var logger = log4js.getLogger('watcher.node.resource');
 var node = require('./node');
 var nodeInfo = require('./index');
 
-var events = require('../store/events'),
+var events = requre('../store/events'),
     eventNames = require('../event_names');
 
 module.exports = {
@@ -20,7 +20,7 @@ function created(resourceDefinition, key) {
         .then(function() {
             logger.debug('Flagging the resource ' + resourceDefinition.fsPath + ' as ready');
 
-            return kv.flag(key, 2)
+            return kv.flag(key, 2).then();
         }).then(
             function() { events.fire(eventNames.RESOURCE_INSTALL_SUCCESS, {tint: resourceDefinition.tint, node: resourceDefinition.node, resource: resourceDefinition.id}); },
             function(error) {
