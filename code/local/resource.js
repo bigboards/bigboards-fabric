@@ -18,7 +18,7 @@ module.exports = {
 };
 
 function createResource(definition) {
-    return consulUtils.kvToFs(definition.consulPath, defintiion.fsPath, definition.scope);
+    return consulUtils.kvToFs(definition.consulPath, definition.fsPath, definition.scope);
 }
 
 function removeResource(definition) {

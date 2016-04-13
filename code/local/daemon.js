@@ -23,7 +23,7 @@ module.exports = {
     stop: stopDaemon
 };
 
-function createDaemon(daemon, key) {
+function createDaemon(daemon) {
     var evt = {
         tint: daemon.tint,
         service: daemon.service,
@@ -57,9 +57,6 @@ function createDaemon(daemon, key) {
         .then(function() {
             return driver.create(configuration);
         })
-        .then(function() {
-            return kv.flag(key, 2);
-        })
         .then(
             function() {
                 return events.fire(events.names.DAEMON_INSTALL_SUCCESS, evt);
@@ -71,7 +68,7 @@ function createDaemon(daemon, key) {
         );
 }
 
-function removeDaemon(daemon, key) {
+function removeDaemon(daemon) {
     var evt = {
         tint: daemon.tint,
         service: daemon.service,
@@ -87,9 +84,6 @@ function removeDaemon(daemon, key) {
             });
 
     return driver.remove(daemon.id)
-        .then(function() {
-            return kv.remove.key(key)
-        })
         .then(function() {
             return services.deregister(daemon.id);
         })

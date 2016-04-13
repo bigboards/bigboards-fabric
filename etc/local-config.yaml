@@ -3,9 +3,11 @@ nic: wlp2s0
 data_dir: /tmp/data
 hive_host: hive.bigboards.io
 hive_port: 80
+
+dummy.local: true
+
 cluster_key: ziN1OXB20wQTarp7tiqT2Q==
 cluster_name: test-cluster
 cluster_nodes:
-  - 10.10.1.117
 cluster_role: server
-cluster_servers: 2
+cluster_servers: 1

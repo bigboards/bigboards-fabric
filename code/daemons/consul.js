@@ -10,7 +10,6 @@ var sh = require('../utils/sh-utils'),
 
 var Errors = require('../errors');
 var logger = Log4js.getLogger('daemon.consul');
-var nodeInfo = require('../node');
 var settings = require('../settings');
 
 function Consul() {
@@ -22,6 +21,26 @@ function Consul() {
 
     this.child = null;
     this.consul = new C();
+
+    function shutdownHandler(command, sudo) {
+        return function() {
+            var pid = sh.pidof(command, {sudo: sudo});
+
+            if (!pid || pid == -1) {
+                logger.error('Unable to stop consul since no PID could be found for the process');
+            } else {
+                logger.warn('Stopping consul by sending it the kill signal');
+                sh.kill(pid, 9, {sudo: sudo});
+            }
+        }
+    }
+
+    process.on('SIGINT', function() { process.exit(0); });
+    process.on('exit', shutdownHandler(this.command, this.sudo));
+    process.on('uncaughtException', function(error) {
+        logger.error(error);
+        process.exit(1);
+    });
 }
 
 Consul.prototype.client = function() {
@@ -88,7 +107,10 @@ Consul.prototype.start = function(args) {
         this.child.stdout.on('data', function (data) {
             if (data.toString('utf8').indexOf('agent: Synced node info') != -1 && !found) {
                 found = true;
-                defer.resolve(Q.delay(1000));
+
+                defer.resolve(Q.delay(1000).then(function() {
+                    logger.warn("consul has been started");
+                }));
             }
 
             logger.info(data.toString('utf8'));

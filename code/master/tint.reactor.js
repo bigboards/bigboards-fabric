@@ -1,32 +1,31 @@
-var Q = require('q'),
-    kv = require('../store/kv'),
-    tu = require('../utils/tint-utils');
-
-var log4js = require('log4js');
-var logger = log4js.getLogger('watcher.tint');
-
 var events = require('../store/events'),
-    eventNames = require('../event_names');
+    kv = require('../store/kv'),
+    tu = require('../utils/tint-utils'),
+    Q = require('q');
+
+var DaemonDispatcher = require('./daemon.dispatcher');
+var ResourceDispatcher = require('./resource.dispatcher');
 
 var ResourceProviders = require('./resources');
 
-var ContainerDispatcher = require('./daemon.dispatcher.js');
-var ResourceDispatcher = require('./resource.dispatcher');
+// -- logging
+var log4js = require('log4js'),
+    logger = log4js.getLogger('reactor.tint');
 
 module.exports = {
-    created: created,
-    ready: ready,
-    updated: updated,
-    removed: removed,
-    cleanup: cleanup,
-    error: error
+    processError: processError,
+    processCreate: processCreate,
+    processRemove: processRemove,
+    processCleanup: processCleanup,
+    processStart: processStart,
+    processStop: processStop
 };
 
-function ready(tint) {
-    events.fire(eventNames.TINT_INSTALL_SUCCESS, {tint: tu.id(tint)});
+function processError(error) {
+    logger.error("Internal Error: " + error);
 }
 
-function created(tint, key) {
+function processCreate(key, tint) {
     var promises = [];
     tint.resources.forEach(function(resource) {
         promises.push(loadResourceIntoConsul(tint, resource))
@@ -39,7 +38,7 @@ function created(tint, key) {
         })
         .then(function() {
             logger.info('distributing containers to nodes');
-            return ContainerDispatcher.install.byTint(tint);
+            return DaemonDispatcher.install.byTint(tint);
         })
         .then(function() {
             logger.debug('flagging the tint as being ready');
@@ -49,39 +48,39 @@ function created(tint, key) {
         });
 }
 
-function updated(tint) {
-
-}
-
-function removed(tint, key) {
+function processRemove(key, tint) {
     logger.debug('removing containers and resources from the nodes');
-    return ContainerDispatcher.remove.byTint(tint)
+    return DaemonDispatcher.remove.byTint(tint)
         .then(function() {
             return ResourceDispatcher.remove.byTint(tint);
         }).then(function() {
             return kv.remove.prefix('resources')
         }).then(function() {
             logger.debug('removing the tint from the consul store');
-            kv.remove.prefix(key);
+            return kv.remove.prefix(key);
         }).then(
-            function() { events.fire(eventNames.TINT_UNINSTALL_SUCCESS, {tint: tu.id(tint)}); },
-            function(error) { events.fire(eventNames.TINT_UNINSTALL_FAILED, {tint: tu.id(tint), error: error.message}); }
+            function() { events.fire(events.names.TINT_UNINSTALL_SUCCESS, {tint: tu.id(tint)}); },
+            function(error) { events.fire(events.names.TINT_UNINSTALL_FAILED, {tint: tu.id(tint), error: error.message}); }
         );
 }
 
-function cleanup() {
+function processCleanup(key, data) {
     logger.debug('removing containers and resources from the nodes');
     return Q.all([
-        ContainerDispatcher.remove.all(),
+        DaemonDispatcher.remove.all(),
         ResourceDispatcher.remove.all()
     ]).then(function() {
         logger.debug('removing all tints from the consul store');
-        kv.remove.prefix('/tints/');
+        return kv.remove.prefix('/tints/');
     });
 }
 
-function error(err) {
+function processStart(key, data) {
+    return Q();
+}
 
+function processStop(key, data) {
+    return Q();
 }
 
 function loadResourceIntoConsul(tint, resourceDefinition) {
@@ -90,12 +89,12 @@ function loadResourceIntoConsul(tint, resourceDefinition) {
 
     var pathInConsul = "resources/" + tu.id(tint) + "/" + resourceDefinition.id;
 
-    events.fire(eventNames.RESOURCE_LOAD_PENDING, { tint: tu.id(tint), resource: resourceDefinition.id });
+    events.fire(events.names.RESOURCE_LOAD, events.state.PENDING, { tint: tu.id(tint), resource: resourceDefinition.id });
 
     return provider.toConsul(pathInConsul, resourceDefinition.settings).then(function() {
-        events.fire(eventNames.RESOURCE_LOAD_SUCCESS, { tint: tu.id(tint), resource: resourceDefinition.id });
+        events.fire(events.names.RESOURCE_LOAD, events.state.SUCCESS, { tint: tu.id(tint), resource: resourceDefinition.id });
         logger.info('Moved the configuration resource into consul');
     }, function(error) {
-        events.fire(eventNames.RESOURCE_LOAD_FAILED, { tint: tu.id(tint), resource: resourceDefinition.id, error: error.message });
+        events.fire(events.names.RESOURCE_LOAD, events.state.FAILED, { tint: tu.id(tint), resource: resourceDefinition.id, error: error.message });
     });
 }

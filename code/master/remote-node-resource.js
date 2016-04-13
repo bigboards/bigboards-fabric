@@ -1,6 +1,5 @@
 var events = require('../store/events'),
     kv = require('../store/kv'),
-    system = require('./system'),
     settings = require('../settings'),
     Q = require('q'),
     uuid = require('node-uuid');
@@ -9,17 +8,23 @@ var events = require('../store/events'),
 var consulUtils = require('../utils/consul-utils'),
     shellUtils = require('../utils/sh-utils');
 
+// -- storage
+var ScopedStorage = require('../cluster/storage');
+
 // -- logging
 var log4js = require('log4js'),
     logger = log4js.getLogger('remote.resource');
 
-module.exports = {
-    create: createResourceOnNode,
-    remove: removeResource,
-    clean: cleanResources
-};
+function RemoteResource(nodeId) {
+    this.nodeId = nodeId;
+    this.storage = new ScopedStorage('nodes/' + nodeId);
+    this.logger = log4js.getLogger('remote.' + nodeId + '.resource');
 
-function createResourceOnNode(tintId, nodeId, resourceId, resourceType, resourceFsPath, resourceScope) {
+    this.logger.debug("created ScopedStorage nodes/" + nodeId);
+}
+
+RemoteResource.prototype.create = function(tintId, resourceId, resourceType, resourceFsPath, resourceScope) {
+    var me = this;
     var definition = {
         id: resourceId,
         type: resourceType,
@@ -29,51 +34,33 @@ function createResourceOnNode(tintId, nodeId, resourceId, resourceType, resource
         scope: resourceScope
     };
 
-    var evt = {id: uuid.v4(), tint: tintId, resource: resourceId, node: nodeId};
+    return this.storage.create('resources/' + tintId + '/' + resourceId, definition).then(function() {
+        logger.debug('Created resource ' + resourceId + ' on node ' + me.nodeId + '.');
+    });
+};
 
-    var consulKey = 'nodes/' + nodeId + '/resources/' + tintId + '/' + resourceId;
-    return kv.set(consulKey, definition, null, 0)
-        .then(function() {
-            return events.fire(events.names.RESOURCE_INSTALL, events.state.PENDING, evt);
-        })
-        .then(function() {
-            return events.on(events.names.RESOURCE_INSTALL + '@' + evt.id)
-                .then(function() { return kv.flag(consulKey, 2); });
+RemoteResource.prototype.removeForTint = function(tintId) {
+    return this.storage.remove('resources/' + tintId);
+};
+
+RemoteResource.prototype.removeAll = function() {
+    return storage.childKeys('resources/').then(function(nodeTintKeys) {
+        var promises = [];
+
+        nodeTintKeys.forEach(function(nodeTintKey) {
+            promises.push(storage.childKeys(nodeTintKey).then(function(resourceKeys) {
+                var promises = [];
+
+                resourceKeys.forEach(function(resourceKey) {
+                    promises.push(storage.remove(resourceKey));
+                });
+
+                return Q.all(promises);
+            }));
         });
-}
 
-function removeResource(tintId, nodeId, resourceId) {
-    var evt = {
-        id: uuid.v4(),
-        tint: tintId,
-        resource: resourceId,
-        node: nodeId
-    };
+        return Q.all(promises);
+    });
+};
 
-    var consulKey = 'nodes/' + nodeId + '/resources/' + tintId;
-    return kv.multiflag(consulKey, 999)
-        .then(function() {
-            events.fire(events.names.RESOURCE_UNINSTALL, events.state.PENDING, evt);
-        })
-        .then(function() {
-            return events.on(events.names.RESOURCE_UNINSTALL + '@' + evt.id)
-                .then(function() { return kv.remove.prefix(consulKey); });
-        });
-}
-
-function cleanResources(nodeId) {
-    var evt = {
-        id: uuid.v4(),
-        node: nodeId
-    };
-
-    var consulKey = 'nodes/' + nodeId + '/resources';
-    return kv.multiflag(consulKey, 999)
-        .then(function() {
-            events.fire(events.names.RESOURCE_CLEANUP, events.state.PENDING, evt);
-        })
-        .then(function() {
-            return events.on(events.names.RESOURCE_CLEANUP + '@' + evt.id)
-                .then(function() { return kv.remove.prefix(consulKey); });
-        });
-}
+module.exports = RemoteResource;

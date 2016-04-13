@@ -16,9 +16,9 @@
       "id": "elasticsearch",
       "daemons": [
         {
-          "name": "elasticsearch",
+          "name": "engine",
           "instances": "all",
-          "id": "elasticsearch",
+          "id": "engine",
           "driver": "docker",
           "configuration": {
             "Image": "bigboards/elasticsearch-x86_64",

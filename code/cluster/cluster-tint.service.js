@@ -17,11 +17,11 @@ module.exports = {
 
 function installTint(definition) {
     // -- todo: make sure a stack tint has not been installed yet
-    return kv.set('tints/' + tu.id(definition), definition, null, 0);
+    return kv.set('tints/' + tu.id(definition), definition, null, kv.flags.CREATE + kv.flags.OPERATION_PENDING);
 }
 
 function uninstallTint(profileId, slug) {
-    return kv.flag('tints/' + profileId + '$' + slug, 999);
+    return kv.flag('tints/' + profileId + '$' + slug, kv.flags.CREATE + kv.flags.OPERATION_PENDING);
 }
 
 function listTints() {

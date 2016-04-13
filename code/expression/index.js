@@ -4,18 +4,16 @@ module.exports = {
     nodes: parseNodes
 };
 
-function parseNodes(expression) {
+function parseNodes(expression, nodes) {
     var filters = expressionToFilters(expression);
 
-    return catalog.nodes().then(function(nodes) {
-        var result = nodes;
+    var result = nodes;
 
-        filters.forEach(function(filter) {
-            result = filter(result);
-        });
-
-        return result;
+    filters.forEach(function(filter) {
+        result = filter(result);
     });
+
+    return result;
 }
 
 function expressionToFilters(expression) {
@@ -47,7 +45,7 @@ function _idMustMatchFilter(expression) {
 
     return function(nodes) {
         nodes.forEach(function(node) {
-            if (!node.id.match(regex))
+            if (!node.match(regex))
                 nodes.splice(nodes.indexOf(node));
         });
 
@@ -60,7 +58,7 @@ function _idMustNotMatchFilter(expression) {
 
     return function(nodes) {
         nodes.forEach(function(node) {
-            if (node.id.match(regex))
+            if (node.match(regex))
                 nodes.splice(nodes.indexOf(node));
         });
 

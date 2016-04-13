@@ -57,6 +57,10 @@ module.exports = {
         DAEMON_STOP_SUCCESS: 'daemon:stop:success',
         DAEMON_STOP_FAILED: 'daemon:stop:failed',
 
+        TINT_INSTALL: 'tint:install',
+        TINT_UNINSTALL: 'tint:uninstall',
+
+        RESOURCE_LOAD: 'resource:load',
         RESOURCE_INSTALL: 'resource:install',
         RESOURCE_UNINSTALL: 'resource:uninstall',
         RESOURCE_CLEANUP: 'resource:cleanup',

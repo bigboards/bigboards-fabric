@@ -5,6 +5,18 @@ var Q = require('q'),
 var logger = log4js.getLogger('consul.kv');
 var consul = require('consul')();
 
+var flags = {
+    OPERATION_PENDING: 1,
+    OPERATION_OK: 2,
+    OPERATION_FAILED: 4,
+    CREATE: 8,
+    UPDATE: 16,
+    REMOVE: 32,
+    CLEANUP: 64,
+    START: 128,
+    STOP: 256
+};
+
 module.exports = {
     generate: generateValue,
     get: {
@@ -18,13 +30,16 @@ module.exports = {
         prefix: removeByPrefix
     },
     list: listKeys,
-    watch: watchKey,
+    children: listChildren,
+    on: onFlagChange,
+    listen: listenFlagChange,
     flag: setFlag,
     multiflag: setFlagForAll,
     raw: {
         set: setRawValue,
         get: getRawValue
-    }
+    },
+    flags: flags
 };
 
 function generateValue(consulPath, fsPath, variables, prefix) {
@@ -217,6 +232,16 @@ function removeByPrefix(prefix) {
     return defer.promise;
 }
 
+function listChildren(prefix) {
+    var defer = Q.defer();
+
+    consul.kv.keys({key: prefix, separator: '/'}, function(err, data) {
+        return (err) ? defer.reject(err) : defer.resolve(data);
+    });
+
+    return defer.promise;
+}
+
 function listKeys(prefix) {
     var defer = Q.defer();
 
@@ -227,10 +252,93 @@ function listKeys(prefix) {
     return defer.promise;
 }
 
-function watchPrefix(prefix) {
-    return consul.watch({ method: consul.kv.get, options: { keyprefix: prefix }});
+function listenFlagChange(key, listener, recurse, operations) {
+    var watch = consul.watch({ method: consul.kv.get, options: { key: key, recurse: recurse }});
+
+    watch.on('change', function(data, res) {
+        if (res.statusCode == 404) {
+            logger.error('Unable to listen for changes since the kv store has no "' + key + '" key');
+            return;
+        }
+
+        if (data) {
+            data.forEach(function(dataItem) {
+                if (dataItem)
+                    logger.debug('KV change event occured: ' + JSON.stringify(dataItem));
+                else
+                    logger.debug('KV change event occured: - data unknown -');
+
+                if (operations) {
+                    for (var idx in operations) {
+                        if (!operations.hasOwnProperty(idx)) continue;
+
+
+                        if (dataItem.Flags % operations[idx] != 0) {
+                            return;
+                        }
+                    }
+                }
+
+                listener(null, dataItem);
+            });
+        }
+    });
+
+    watch.on('error', function(error) {
+        listener(error);
+    });
+
+    return watch;
 }
 
-function watchKey(key) {
-    return consul.watch({ method: consul.kv.get, options: { key: key }});
+function onFlagChange(key, timeout) {
+    var defer = Q.defer();
+
+    if (! timeout) timeout = 60 * 60 * 1000;
+    var timedOut = false;
+
+
+    var watch = consul.watch({ method: consul.kv.get, options: { key: key }});
+
+    watch.on('change', function(data, res) {
+        if (timedOut) return;
+
+        if (data) {
+            // -- stop  watching
+            watch.end();
+
+            data.forEach(function(dataItem) {
+                // -- we will ignore pending changes
+                if (dataItem.Flags % flags.OPERATION_PENDING == 0) return;
+
+                var value = JSON.parse(dataItem.Value);
+                if (dataItem.Flags % flags.OPERATION_FAILED == 0) {
+                    defer.reject(new Error(value.error));
+                } else if (dataItem.Flags % flags.OPERATION_OK == 0) {
+                    defer.resolve(dataItem);
+                } else {
+                    defer.reject(new Error("Invalid key/value item flags"));
+                }
+            })
+        }
+    });
+
+    watch.on('error', function(error) {
+        if (timedOut) return;
+
+        // -- stop  watching
+        watch.end();
+
+        defer.reject(error);
+    });
+
+    setTimeout(function () {
+        if (timedOut) return;
+
+        watch.end();
+        timedOut = true;
+        defer.reject(new Error('Timeout reached'));
+    }, timeout);
+
+    return defer.promise;
 }
