@@ -75,10 +75,7 @@ function start() {
             });
         })
         .then(function() {
-            logger.debug('Start watching for containers on this node');
             localWatchers.daemon.start();
-
-            logger.debug('Start watching for resources on this node');
             localWatchers.resource.start();
         })
         .then(function() {

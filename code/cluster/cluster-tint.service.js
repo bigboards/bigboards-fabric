@@ -23,7 +23,7 @@ function installTint(definition) {
 }
 
 function uninstallTint(profileId, slug) {
-    return kv.flag('tints/' + profileId + '$' + slug, consulUtils.flags.CREATE + consulUtils.flags.OPERATION_PENDING);
+    return kv.flag('tints/' + profileId + '$' + slug, consulUtils.flags.REMOVE + consulUtils.flags.OPERATION_PENDING);
 }
 
 function listTints() {

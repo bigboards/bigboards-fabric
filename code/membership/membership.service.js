@@ -75,7 +75,7 @@ function status() {
 }
 
 function raceForLeader(localIp, localPort, sessionId) {
-    logger.debug('Participating in the cluster');
+    logger.info('Participating in the cluster');
 
     // -- try to become the leader
     var dataForLeader = {
@@ -106,7 +106,6 @@ function raceForLeader(localIp, localPort, sessionId) {
 
 function connected(leader, localIp, localPort) {
     if (leader) {
-        logger.debug('Start watching for tints');
         tintWatcher.start();
     } else {
         var watch = consul.watch({ method: consul.kv.get, options: { key: 'leader', recurse: recurse }});

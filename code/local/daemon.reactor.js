@@ -4,7 +4,7 @@ var daemon = require('./daemon'),
 
 // -- logging
 var log4js = require('log4js'),
-    logger = log4js.getLogger('local.watcher.daemon');
+    logger = log4js.getLogger('local.reactor.daemon');
 
 module.exports = {
     processError: processError,
@@ -54,7 +54,7 @@ function processCleanup(key, data) {
 function processStart(key, data) {
     logger.info('Starting daemon ' + data.id);
 
-    return daemon.start().then(
+    return daemon.start(data).then(
         function() { logger.info('started daemon ' + data.id) },
         function(error) { logger.error(error); }
     );
@@ -63,7 +63,7 @@ function processStart(key, data) {
 function processStop(key, data) {
     logger.info('Stopping daemon ' + data.id);
 
-    return daemon.stop().then(
+    return daemon.stop(data).then(
         function() { logger.info('stopped daemon ' + data.id) },
         function(error) { logger.error(error); }
     );

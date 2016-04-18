@@ -77,7 +77,7 @@ function startDaemon(containerName) {
         });
 }
 
-function stopDaemon() {
+function stopDaemon(containerName) {
     return dockerUtils.container.status(containerName)
         .then(function(status) {
             if (!status.Running) return Q();

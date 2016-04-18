@@ -45,9 +45,15 @@ module.exports = {
 };
 
 function containerExists(name) {
-    return listContainers({all: true, filters: { label: [name]}})
+    return listContainers({all: true})
         .then(function(containers) {
-            return (containers.length == 1);
+            for (var idx in containers) {
+                if (! containers.hasOwnProperty(idx)) continue;
+
+                if (containers[idx].Names.indexOf('/' + name) !== -1) return true;
+            }
+
+            return false;
         });
 }
 
@@ -63,16 +69,16 @@ function pullImage(image, options) {
 }
 
 function getContainer(tag) {
-    var defer = Q.defer();
+    return listContainers({all: true})
+        .then(function(containers) {
+            for (var idx in containers) {
+                if (! containers.hasOwnProperty(idx)) continue;
 
-    docker.listContainers({all: true, filters: {label: [tag]}}, function (err, res) {
-        if (err) return defer.reject(err);
+                if (containers[idx].Names.indexOf('/' + tag) !== -1) return containers[idx];
+            }
 
-        if (res.length == 0) defer.resolve(null);
-        else return defer.resolve(res[0]);
-    });
-
-    return defer.promise;
+            return null;
+        });
 }
 
 function getContainerById(id) {
@@ -83,6 +89,7 @@ function listContainers(options) {
     var defer = Q.defer();
 
     docker.listContainers(options, function (err, res) {
+        log.trace("containers: " + JSON.stringify(res));
         return (err) ? defer.reject(err) : defer.resolve(res);
     });
 
@@ -102,20 +109,16 @@ function createContainer(options) {
 }
 
 function destroyAll(options) {
-    var promises = [];
+    return listContainers({all: true})
+        .then(function(containers) {
+            var promises = [];
 
-    docker.listContainers({all: true}, function (err, containers) {
-        if (err) {
-            log.error(err);
-            return Q.reject(err);
-        }
+            containers.forEach(function(container) {
+                promises.push(destroyContainerById(container.Id, options));
+            });
 
-        containers.forEach(function(container) {
-            promises.push(destroyContainerById(container.Id, options));
+            return Q.all(promises);
         });
-    });
-
-    return Q.all(promises);
 }
 
 function destroyContainer(container, options) {

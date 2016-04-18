@@ -23,7 +23,7 @@ Watcher.prototype.start = function() {
                 logger.error(err);
         }
 
-        logger.debug('Storage Key Flag Modified: ' + data.Flags);
+        logger.trace(JSON.stringify(data));
 
         var value = JSON.parse(data.Value);
 

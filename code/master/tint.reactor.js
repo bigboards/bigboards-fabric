@@ -39,11 +39,13 @@ function processCreate(key, tint) {
             ]);
         })
         .then(function() {
-            logger.debug('flagging the tint as being ready');
-            return kv.flag(key, 2);
-        }).fail(function(error) {
-            logger.error(error);
-        });
+            logger.info('starting the daemons');
+
+            return DaemonDispatcher.start(tint);
+        }).then(
+            function() { logger.info('tint ' + tu.id(tint) + ' up and running') },
+            function(error) { logger.error(error); }
+        );
 }
 
 function processRemove(key, tint) {

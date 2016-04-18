@@ -119,13 +119,15 @@ ScopedStorage.prototype.childKeys = function(key) {
 };
 
 ScopedStorage.prototype.signal = function(key, signal) {
-    logger.debug('[ SIGNAL ] operation=get, key=' + key);
-    return consul.kv.get(key, function(err, data) {
+    var actualKey = this.internalKey(key, false);
+
+    logger.debug('[ SIGNAL ] operation=get, key=' + actualKey);
+    return consul.kv.get(actualKey, function(err, data) {
         if (err) return Q.reject(err);
-        if (!data) return Q.reject(new Error('No data found at ' + key));
+        if (!data) return Q.reject(new Error('No data found at ' + actualKey));
 
         var options = {
-            key: key,
+            key: actualKey,
             value: data.Value,
             flags: signal + consulUtils.flags.OPERATION_PENDING
         };
@@ -134,7 +136,12 @@ ScopedStorage.prototype.signal = function(key, signal) {
         return consul.kv.set(options, function(err, data) {
             if (err) return Q.reject(err);
 
-            return watchAndWait(options.key, signal, timeouts.update);
+            return watchAndWait(options.key, signal, timeouts.update)
+                .then(function() {
+                    logger.debug("[ SIGNAL ] OK for " + options.key);
+                }, function(error) {
+                    logger.debug("[ SIGNAL ] FAILED for " + options.key + ": " + error.message);
+                });
         });
     });
 };
@@ -153,13 +160,11 @@ ScopedStorage.prototype.create = function(key, value, acquire) {
     logger.debug('[ CREATE ] operation=set, key=' + options.key + ', flags=' + options.flags);
     return consul.kv.set(options)
         .then(function(success) {
-            logger.debug("set the flag of key " + options.key + ' to create.pending, waiting for confirmation');
-
             return watchAndWait(options.key, consulUtils.flags.CREATE, timeouts.create)
                 .then(function() {
-                    logger.debug("ok confirmation received for " + options.key);
+                    logger.debug("[ CREATE ] OK for " + options.key);
                 }, function(error) {
-                    logger.debug("error confirmation received for " + options.key + ": " + error.message);
+                    logger.debug("[ CREATE ] FAILED for " + options.key + ": " + error.message);
                 });
         });
 };
@@ -185,7 +190,12 @@ ScopedStorage.prototype.update = function(key, updateHandler) {
             return consul.kv.set(options,function(err, data) {
                 if (err) return Q.reject(err);
 
-                return watchAndWait(operation.key, consulUtils.flags.UPDATE, timeouts.update);
+                return watchAndWait(operation.key, consulUtils.flags.UPDATE, timeouts.update)
+                    .then(function() {
+                        logger.debug("[ UPDATE ] OK for " + options.key);
+                    }, function(error) {
+                        logger.debug("[ UPDATE ] FAILED for " + options.key + ": " + error.message);
+                    });
             });
         });
 };
@@ -209,6 +219,11 @@ ScopedStorage.prototype.remove = function(key) {
                 return watchAndWait(options.key, consulUtils.flags.REMOVE, timeouts.remove)
                     .then(function() {
                         return consul.kv.del({ key: actualKey, recurse: true });
+                    })
+                    .then(function() {
+                        logger.debug("[ REMOVE ] OK for " + options.key);
+                    }, function(error) {
+                        logger.debug("[ REMOVE ] FAILED for " + options.key + ": " + error.message);
                     });
             });
         });
@@ -290,8 +305,12 @@ function watchAndWait(key, operation, timeout) {
             defer.reject(new Error('Multiple changes to the same key! Expected operation ' + consulUtils.flagToName(operation) + ' but received operation ' + consulUtils.flagToName(outcome.operation)));
             responded = true;
             watch.end();
-        } else {
+        } else if (outcome.state == consulUtils.flags.OPERATION_OK) {
             defer.resolve(dataItem);
+            responded = true;
+            watch.end();
+        } else if (outcome.state == consulUtils.flags.OPERATION_FAILED) {
+            defer.reject(new Error(dataItem.Value.error));
             responded = true;
             watch.end();
         }

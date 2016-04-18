@@ -15,6 +15,7 @@ var cluster = require('../cluster');
  * resource definition needed for a node to deploy a container and the resources it requires.
  */
 module.exports = {
+    start: startTintDaemons,
     install: {
         byTint: installTintDaemons
     },
@@ -23,6 +24,37 @@ module.exports = {
         byTint: removeTintDaemons
     }
 };
+
+// ====================================================================================================================
+// == Start & Stop
+// ====================================================================================================================
+function startTintDaemons(tint) {
+    var promises = [];
+    tint.services.forEach(function(service) {
+        service.daemons.forEach(function(daemon) {
+            promises.push(startDaemon(tint, service, daemon));
+        });
+    });
+
+    return promises;
+}
+
+function startDaemon(tint, service, daemon) {
+    var tintId = tu.id(tint);
+
+    logger.info('Starting daemon ' + service.id + '.' + daemon.id + ' for tint ' + tintId);
+
+    return cluster.nodes.byExpression(daemon.instances)
+        .then(function(nodes) {
+            var promises = [];
+
+            nodes.forEach(function(node) {
+                promises.push(node.daemons.startDaemon(tintId, service.id, daemon.id));
+            });
+
+            return Q.all(promises);
+        });
+}
 
 // ====================================================================================================================
 // == Install
