@@ -16,6 +16,7 @@ var cluster = require('../cluster');
  */
 module.exports = {
     start: startTintDaemons,
+    stop: stopTintDaemons,
     install: {
         byTint: installTintDaemons
     },
@@ -50,6 +51,34 @@ function startDaemon(tint, service, daemon) {
 
             nodes.forEach(function(node) {
                 promises.push(node.daemons.startDaemon(tintId, service.id, daemon.id));
+            });
+
+            return Q.all(promises);
+        });
+}
+
+function stopTintDaemons(tint) {
+    var promises = [];
+    tint.services.forEach(function(service) {
+        service.daemons.forEach(function(daemon) {
+            promises.push(stopDaemon(tint, service, daemon));
+        });
+    });
+
+    return promises;
+}
+
+function stopDaemon(tint, service, daemon) {
+    var tintId = tu.id(tint);
+
+    logger.info('Stopping daemon ' + service.id + '.' + daemon.id + ' for tint ' + tintId);
+
+    return cluster.nodes.byExpression(daemon.instances)
+        .then(function(nodes) {
+            var promises = [];
+
+            nodes.forEach(function(node) {
+                promises.push(node.daemons.stopDaemon(tintId, service.id, daemon.id));
             });
 
             return Q.all(promises);

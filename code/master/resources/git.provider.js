@@ -39,8 +39,9 @@ function readPath(keyPrefix, path, kvPath) {
     files.forEach(function(file) {
         if (file.indexOf('.') == 0) return;
 
+        logger.debug('processing ' + kvPath + '/' + file);
+
         if (fu.isDirectory(path + '/' + file)) {
-            logger.debug('processing ' + kvPath + '/' + file);
             promises.push(readPath(keyPrefix, path + '/' + file, kvPath + '/' + file));
         } else {
             promises.push(generateFile(keyPrefix, kvPath, path, file));

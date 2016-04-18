@@ -4,10 +4,6 @@ var events = require('../store/events'),
     Q = require('q'),
     uuid = require('node-uuid');
 
-// -- utilities
-var consulUtils = require('../utils/consul-utils'),
-    shellUtils = require('../utils/sh-utils');
-
 // -- storage
 var ScopedStorage = require('../cluster/storage');
 
@@ -29,7 +25,7 @@ RemoteResource.prototype.create = function(tintId, resourceId, resourceType, res
         id: resourceId,
         type: resourceType,
         tint: tintId,
-        consulPath: 'resources/' + tintId + '/' + resourceId,
+        consulPath: 'tints/' + tintId + '/resources/' + resourceId,
         fsPath: resourceFsPath,
         scope: resourceScope
     };
