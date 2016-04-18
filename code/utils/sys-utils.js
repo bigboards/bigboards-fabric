@@ -3,9 +3,14 @@ var Q = require('q'),
 
 module.exports = {
     architecture: getArchitecture,
+    platform: getPlatform,
     ip: getIpAddress,
     id: getUniqueId
 };
+
+function getPlatform() {
+    return os.platform();
+}
 
 function getArchitecture() {
     var architecture = os.arch();

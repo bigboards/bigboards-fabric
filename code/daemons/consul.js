@@ -16,7 +16,7 @@ var settings = require('../settings');
 function Consul() {
     this.home = process.cwd();
     this.binary_url = this.home + '/lib/consul/';
-    this.command = this.home + '/lib/consul/consul-' + su.architecture();
+    this.command = this.home + '/lib/consul/consul-' + su.platform() + '-' + su.architecture();
 
     this.sudo = true;
 
