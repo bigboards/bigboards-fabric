@@ -40,6 +40,7 @@ function installTintDaemons(tint) {
 }
 
 function installDaemon(tint, service, daemon) {
+    logger.info('Installing daemon ' + service.id + '.' + daemon.id + ' for tint ' + tu.id(tint));
     var tintId = tu.id(tint);
 
     // -- convert daemon volumes pointing to resources to use absolute paths instead of resource names
@@ -60,7 +61,7 @@ function installDaemon(tint, service, daemon) {
         });
     }
 
-    cluster.nodes.byExpression(daemon.instances)
+    return cluster.nodes.byExpression(daemon.instances)
         .then(function(nodes) {
             var promises = [];
 

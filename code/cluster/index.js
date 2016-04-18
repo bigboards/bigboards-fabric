@@ -1,4 +1,4 @@
-var kv = require('../store/kv'),
+var StringUtils = require('../utils/string-utils'),
     RemoteNode = require('../master/remote-node'),
     Expression = require('../expression'),
     ScopedStorage = require('./storage');
@@ -13,30 +13,44 @@ module.exports = {
 };
 
 function listAllNodes() {
-    return storage.childKeys()
-    .then(function(nodes) {
-        var result = [];
+    return nodes()
+        .then(function(nodes) {
+            var result = [];
 
-        nodes.forEach(function(node) {
-            result.push(new RemoteNode(node));
+            nodes.forEach(function(node) {
+                result.push(new RemoteNode(node));
+            });
+
+            return result;
         });
-
-        return result;
-    });
 }
 
 function listNodesByExpression(expression) {
-    return storage.childKeys('')
+    return nodes()
         .then(function(nodes) {
-            return Expression.nodes(expression, nodes)
-                .then(function (nodes) {
-                    var result = [];
+            var resultNodes = Expression.nodes(expression, nodes);
 
-                    nodes.forEach(function (node) {
-                        result.push(new RemoteNode(node));
-                    });
+            var result = [];
 
-                    return result;
-                });
+            resultNodes.forEach(function (node) {
+                result.push(new RemoteNode(node));
+            });
+
+            return result;
+        });
+}
+
+function nodes() {
+    return storage.childKeys()
+        .then(function(nodes) {
+            var result = [];
+
+            nodes.forEach(function(node) {
+                if (StringUtils.endsWith(node, '/')) return;
+
+                result.push(node);
+            });
+
+            return result;
         });
 }
