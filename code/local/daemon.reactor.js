@@ -21,7 +21,12 @@ function processError(error) {
 }
 
 function processCreate(key, data) {
-    return daemon.create(data);
+    logger.info('Creating daemon ' + data.id);
+
+    return daemon.create(data).then(
+        function() { logger.info('created daemon ' + data.id) },
+        function(error) { logger.error(error); }
+    );
 }
 
 function processUpdate(key, data) {
@@ -29,17 +34,37 @@ function processUpdate(key, data) {
 }
 
 function processRemove(key, data) {
-    return daemon.remove(data);
+    logger.info('Removing daemon ' + data.id);
+
+    return daemon.remove(data).then(
+        function() { logger.info('removed daemon ' + data.id) },
+        function(error) { logger.error(error); }
+    );
 }
 
 function processCleanup(key, data) {
-    return daemon.clean();
+    logger.info('Removing all daemons');
+
+    return daemon.clean().then(
+        function() { logger.info('removed all daemons') },
+        function(error) { logger.error(error); }
+    );
 }
 
 function processStart(key, data) {
-    return daemon.start();
+    logger.info('Starting daemon ' + data.id);
+
+    return daemon.start().then(
+        function() { logger.info('started daemon ' + data.id) },
+        function(error) { logger.error(error); }
+    );
 }
 
 function processStop(key, data) {
-    return daemon.stop();
+    logger.info('Stopping daemon ' + data.id);
+
+    return daemon.stop().then(
+        function() { logger.info('stopped daemon ' + data.id) },
+        function(error) { logger.error(error); }
+    );
 }

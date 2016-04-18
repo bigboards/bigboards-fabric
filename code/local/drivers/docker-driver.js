@@ -1,4 +1,5 @@
-var system = require('../system');
+var system = require('../system'),
+    Q = require('q');
 
 // -- utilities
 var dockerUtils = require('../../utils/docker-utils');

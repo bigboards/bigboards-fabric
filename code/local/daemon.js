@@ -24,19 +24,9 @@ module.exports = {
 };
 
 function createDaemon(daemon) {
-    var evt = {
-        tint: daemon.tint,
-        service: daemon.service,
-        daemon: daemon.daemon,
-        node: system.id
-    };
-
     var driver = drivers[daemon.driver];
     if (! driver)
-        return events.fire(events.names.DAEMON_INSTALL_FAILED, evt)
-            .then(function() {
-                return Q.reject('Unknown daemon driver "' + daemon.driver + '"');
-            });
+        return Q.reject('Unknown daemon driver "' + daemon.driver + '"');
 
     logger.debug('Creating daemon ' + daemon.id + ' using driver ' + daemon.driver);
 
@@ -56,53 +46,21 @@ function createDaemon(daemon) {
     return services.register(serviceDescriptor)
         .then(function() {
             return driver.create(configuration);
-        })
-        .then(
-            function() {
-                return events.fire(events.names.DAEMON_INSTALL_SUCCESS, evt);
-            },
-            function(error) {
-                evt.error = error.message;
-                return events.fire(events.names.DAEMON_INSTALL_FAILED, evt);
-            }
-        );
+        });
 }
 
 function removeDaemon(daemon) {
-    var evt = {
-        tint: daemon.tint,
-        service: daemon.service,
-        daemon: daemon.daemon,
-        node: system.id
-    };
-
     var driver = drivers[daemon.driver];
     if (! driver)
-        return events.fire(events.names.DAEMON_UNINSTALL_FAILED, evt)
-            .then(function() {
-                return Q.reject('Unknown daemon driver "' + daemon.driver + '"');
-            });
+        return Q.reject('Unknown daemon driver "' + daemon.driver + '"');
 
     return driver.remove(daemon.id)
         .then(function() {
             return services.deregister(daemon.id);
-        })
-        .then(
-            function() {
-                return events.fire(events.names.DAEMON_UNINSTALL_SUCCESS, evt);
-            },
-            function(error) {
-                evt.error = error.message;
-                return events.fire(events.names.DAEMON_UNINSTALL_FAILED, evt);
-            }
-        );
+        });
 }
 
 function cleanDaemons() {
-    var evt = {
-        node: system.id
-    };
-
     return kv.list('nodes/' + system.id + '/daemons/')
         .then(function (keys) {
             var promises = [];
@@ -121,44 +79,17 @@ function cleanDaemons() {
             });
 
             return Q.all(promises);
-        })
-        .then(
-            function() {
-                return events.fire(events.names.DAEMON_CLEANUP_SUCCESS, evt);
-            },
-            function(error) {
-                evt.error = error.message;
-                return events.fire(events.names.DAEMON_CLEANUP_FAILED, evt);
-            }
-        );
+        });
 }
 
 function startDaemon(daemon) {
     var driver = drivers[daemon.driver];
 
-    return driver.start(daemon.id)
-        .then(
-            function() {
-                return events.fire(events.names.DAEMON_START_SUCCESS, evt);
-            },
-            function(error) {
-                evt.error = error.message;
-                return events.fire(events.names.DAEMON_START_FAILED, evt);
-            }
-        );
+    return driver.start(daemon.id);
 }
 
 function stopDaemon(daemon) {
     var driver = drivers[daemon.driver];
 
-    return driver.start(daemon.id)
-        .then(
-            function() {
-                return events.fire(events.names.DAEMON_STOP_SUCCESS, evt);
-            },
-            function(error) {
-                evt.error = error.message;
-                return events.fire(events.names.DAEMON_STOP_FAILED, evt);
-            }
-        );
+    return driver.start(daemon.id);
 }
