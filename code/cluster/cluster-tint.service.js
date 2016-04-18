@@ -1,10 +1,12 @@
 var Q = require('q'),
     kv = require('../store/kv'),
+    Storage = require('../cluster/storage'),
     services = require('../store/services'),
     catalog = require('../store/catalog'),
     health = require('../store/health'),
     log4js = require('log4js'),
-    tu = require('../utils/tint-utils');
+    tu = require('../utils/tint-utils'),
+    consulUtils = require('../utils/consul-utils');
 
 var logger = log4js.getLogger('service.cluster.tint');
 
@@ -17,11 +19,11 @@ module.exports = {
 
 function installTint(definition) {
     // -- todo: make sure a stack tint has not been installed yet
-    return kv.set('tints/' + tu.id(definition), definition, null, kv.flags.CREATE + kv.flags.OPERATION_PENDING);
+    return kv.set('tints/' + tu.id(definition), definition, null, consulUtils.flags.CREATE + consulUtils.flags.OPERATION_PENDING);
 }
 
 function uninstallTint(profileId, slug) {
-    return kv.flag('tints/' + profileId + '$' + slug, kv.flags.CREATE + kv.flags.OPERATION_PENDING);
+    return kv.flag('tints/' + profileId + '$' + slug, consulUtils.flags.CREATE + consulUtils.flags.OPERATION_PENDING);
 }
 
 function listTints() {

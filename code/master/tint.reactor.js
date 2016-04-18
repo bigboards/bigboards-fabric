@@ -33,12 +33,10 @@ function processCreate(key, tint) {
 
     return Q.all(promises)
         .then(function() {
-            logger.info('distributing resources to nodes');
-            return ResourceDispatcher.install.byTint(tint);
-        })
-        .then(function() {
-            logger.info('distributing containers to nodes');
-            return DaemonDispatcher.install.byTint(tint);
+            return Q.all([
+                ResourceDispatcher.install.byTint(tint),
+                DaemonDispatcher.install.byTint(tint)
+            ]);
         })
         .then(function() {
             logger.debug('flagging the tint as being ready');

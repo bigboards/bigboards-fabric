@@ -105,7 +105,11 @@ Consul.prototype.start = function(args) {
         var found = false;
 
         this.child.stdout.on('data', function (data) {
-            if (data.toString('utf8').indexOf('agent: Synced node info') != -1 && !found) {
+            data = data.toString('utf8');
+            var syncedService = data.indexOf('agent: Synced service \'consul\'') != -1;
+            var syncedNode = data.indexOf('agent: Synced node info') != -1;
+
+            if ((syncedService || syncedNode) && !found) {
                 found = true;
 
                 defer.resolve(Q.delay(1000).then(function() {

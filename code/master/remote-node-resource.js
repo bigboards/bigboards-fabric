@@ -17,7 +17,7 @@ var log4js = require('log4js'),
 
 function RemoteResource(nodeId) {
     this.nodeId = nodeId;
-    this.storage = new ScopedStorage('nodes/' + nodeId);
+    this.storage = new ScopedStorage('nodes/' + nodeId + '/resources');
     this.logger = log4js.getLogger('remote.' + nodeId + '.resource');
 
     this.logger.debug("created ScopedStorage nodes/" + nodeId);
@@ -34,17 +34,21 @@ RemoteResource.prototype.create = function(tintId, resourceId, resourceType, res
         scope: resourceScope
     };
 
-    return this.storage.create('resources/' + tintId + '/' + resourceId, definition).then(function() {
-        logger.debug('Created resource ' + resourceId + ' on node ' + me.nodeId + '.');
-    });
+    return this.storage.create(tintId + '/' + resourceId, definition)
+        .then(function() {
+            logger.debug('Created resource ' + resourceId + ' on node ' + me.nodeId + '.');
+        }, function(error) {
+            logger.warn(error);
+            return error;
+        });
 };
 
 RemoteResource.prototype.removeForTint = function(tintId) {
-    return this.storage.remove('resources/' + tintId);
+    return this.storage.remove(tintId);
 };
 
 RemoteResource.prototype.removeAll = function() {
-    return storage.childKeys('resources/').then(function(nodeTintKeys) {
+    return storage.childKeys().then(function(nodeTintKeys) {
         var promises = [];
 
         nodeTintKeys.forEach(function(nodeTintKey) {

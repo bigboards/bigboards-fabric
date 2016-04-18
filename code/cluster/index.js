@@ -13,12 +13,12 @@ module.exports = {
 };
 
 function listAllNodes() {
-    return storage.childKeys('')
+    return storage.childKeys()
     .then(function(nodes) {
         var result = [];
 
         nodes.forEach(function(node) {
-            result.push(new RemoteNode(node.substring('nodes/'.length)));
+            result.push(new RemoteNode(node));
         });
 
         return result;
@@ -33,7 +33,7 @@ function listNodesByExpression(expression) {
                     var result = [];
 
                     nodes.forEach(function (node) {
-                        result.push(new RemoteNode(node.substring('nodes/'.length)));
+                        result.push(new RemoteNode(node));
                     });
 
                     return result;

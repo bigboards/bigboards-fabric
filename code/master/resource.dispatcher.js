@@ -40,6 +40,8 @@ function installTintResources(tint) {
 function installResource(tint, nodes, resource) {
     var promises = [];
 
+    logger.debug('Dispatching resource ' + resource.id + ' for tint ' + tu.id(tint));
+
     var tintId = tu.id(tint);
     var tintFsDir = settings.get('data_dir') + '/tints/' + tintId + '/resources';
     var resourceFsDir = tintFsDir + '/' + resource.id;

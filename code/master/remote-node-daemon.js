@@ -8,8 +8,8 @@ var log4js = require('log4js');
 
 function RemoteDaemon(nodeId) {
     this.nodeId = nodeId;
-    this.storage = new ScopedStorage('nodes/' + nodeId);
-    this.logger = log4js.getLogger('remote.' + nodeId + '.daemon')
+    this.storage = new ScopedStorage('nodes/' + nodeId + '/daemons');
+    this.logger = log4js.getLogger('remote.' + nodeId + '.daemon');
 }
 
 RemoteDaemon.prototype.create = function(tintId, serviceId, daemonId, daemonDriver, daemonInstanceExpression, daemonConfiguration) {
@@ -22,11 +22,11 @@ RemoteDaemon.prototype.create = function(tintId, serviceId, daemonId, daemonDriv
         configuration: daemonConfiguration
     };
 
-    return this.storage.create('daemons/' + tintId + '/' + daemonInstance.id, daemonInstance);
+    return this.storage.create(tintId + '/' + daemonInstance.id, daemonInstance);
 };
 
 RemoteDaemon.prototype.removeAll = function() {
-    return storage.childKeys('daemons/').then(function(nodeTintKeys) {
+    return storage.childKeys().then(function(nodeTintKeys) {
         var promises = [];
 
         nodeTintKeys.forEach(function(nodeTintKey) {
@@ -46,7 +46,7 @@ RemoteDaemon.prototype.removeAll = function() {
 };
 
 RemoteDaemon.prototype.removeForTint = function(tintId) {
-    return storage.childKeys('daemons/' + tintId).then(function(daemonKeys) {
+    return storage.childKeys(tintId).then(function(daemonKeys) {
         var promises = [];
 
         daemonKeys.forEach(function(daemonKey) {
@@ -60,13 +60,13 @@ RemoteDaemon.prototype.removeForTint = function(tintId) {
 RemoteDaemon.prototype.startDaemon = function(nodeId, tintId, serviceId, daemonId) {
     var daemonInstanceId = serviceId + '-' + daemonId + '-' + nodeId;
 
-    storage.signal('daemons/' + tintId + '/' + daemonInstanceId, ScopedStorage.flags.START);
+    storage.signal(tintId + '/' + daemonInstanceId, ScopedStorage.flags.START);
 };
 
 RemoteDaemon.prototype.stopDaemon = function(nodeId, tintId, serviceId, daemonId) {
     var daemonInstanceId = serviceId + '-' + daemonId + '-' + nodeId;
 
-    storage.signal('daemons/' + tintId + '/' + daemonInstanceId, ScopedStorage.flags.STOP);
+    storage.signal(tintId + '/' + daemonInstanceId, ScopedStorage.flags.STOP);
 };
 
 module.exports = RemoteDaemon;

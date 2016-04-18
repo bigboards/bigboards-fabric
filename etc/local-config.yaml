@@ -3,8 +3,9 @@ nic: wlp2s0
 data_dir: /tmp/data
 hive_host: hive.bigboards.io
 hive_port: 80
-
-dummy.local: true
+timeout.create: 10000
+timeout.update: 10000
+timeout.remove: 10000
 
 cluster_key: ziN1OXB20wQTarp7tiqT2Q==
 cluster_name: test-cluster

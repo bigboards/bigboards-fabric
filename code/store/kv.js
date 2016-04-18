@@ -5,18 +5,6 @@ var Q = require('q'),
 var logger = log4js.getLogger('consul.kv');
 var consul = require('consul')();
 
-var flags = {
-    OPERATION_PENDING: 1,
-    OPERATION_OK: 2,
-    OPERATION_FAILED: 4,
-    CREATE: 8,
-    UPDATE: 16,
-    REMOVE: 32,
-    CLEANUP: 64,
-    START: 128,
-    STOP: 256
-};
-
 module.exports = {
     generate: generateValue,
     get: {
@@ -38,8 +26,7 @@ module.exports = {
     raw: {
         set: setRawValue,
         get: getRawValue
-    },
-    flags: flags
+    }
 };
 
 function generateValue(consulPath, fsPath, variables, prefix) {
@@ -192,7 +179,7 @@ function setRawValue(key, value, acquire, flags) {
     return defer.promise;
 }
 
-function updateValue(key, updateHandler) {
+function updateValue(key, flag, updateHandler) {
     var defer = Q.defer();
 
     consul.kv.get(key, function(err, data) {
@@ -202,10 +189,16 @@ function updateValue(key, updateHandler) {
         var obj = JSON.parse(data.Value);
         var res = updateHandler(obj);
 
-        consul.kv.set(key, JSON.stringify(res, null, 2), function(err, data) {
+        var options = {
+            Key: key,
+            value: JSON.stringify(res, null, 2),
+            Flags: flag
+        };
+
+        consul.kv.set(options, function(err, data) {
             if (err) return defer.reject(err);
 
-            defer.resolve(JSON.parse(data.Value));
+            defer.resolve();
         });
     });
 
@@ -253,7 +246,7 @@ function listKeys(prefix) {
 }
 
 function listenFlagChange(key, listener, recurse, operations) {
-    var watch = consul.watch({ method: consul.kv.get, options: { key: key, recurse: recurse }});
+    var watch = consul.watch({ method: consul.kv.get, options: { key: key, recurse: recurse, separator: "/" }});
 
     watch.on('change', function(data, res) {
         if (res.statusCode == 404) {
@@ -263,23 +256,24 @@ function listenFlagChange(key, listener, recurse, operations) {
 
         if (data) {
             data.forEach(function(dataItem) {
-                if (dataItem)
-                    logger.debug('KV change event occured: ' + JSON.stringify(dataItem));
-                else
-                    logger.debug('KV change event occured: - data unknown -');
-
-                if (operations) {
+                var goAhead = false;
+                if (! operations) goAhead = true;
+                else {
                     for (var idx in operations) {
                         if (!operations.hasOwnProperty(idx)) continue;
 
-
-                        if (dataItem.Flags % operations[idx] != 0) {
-                            return;
+                        if (dataItem.Flags & operations[idx]) {
+                            goAhead = true;
+                            break;
                         }
                     }
                 }
 
-                listener(null, dataItem);
+                if (goAhead) {
+                    logger.debug('calling listener with flag ' + dataItem.Flags);
+
+                    listener(null, dataItem);
+                }
             });
         }
     });

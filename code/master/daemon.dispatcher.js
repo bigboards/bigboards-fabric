@@ -1,5 +1,6 @@
 var kv = require('../store/kv'),
     events = require('../store/events'),
+    settings = require('../settings'),
     tu = require('../utils/tint-utils'),
     Q = require('q'),
     log4js = require('log4js');
