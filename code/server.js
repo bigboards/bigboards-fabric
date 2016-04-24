@@ -30,8 +30,6 @@ function start() {
 
     app.use(express.static(path.join(__dirname, './ui')));
 
-    app.use(app.router);
-
     if (app.get('env') == 'development') {
         app.use(morgan('combined'));
         app.use(errorhandler());
