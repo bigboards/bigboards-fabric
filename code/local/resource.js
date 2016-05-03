@@ -22,9 +22,15 @@ function createResource(definition) {
 }
 
 function removeResource(definition) {
-    return Q(shellUtils.rm(definition.fsPath, {sudo: settings.get('sudo', false), flags: 'rf'}));
+    if (! definition) return Q.reject(new Error("Unable to determine which resource to remove."));
+
+    logger.info("Removing " + definition.fsPath);
+
+    return shellUtils.rm(definition.fsPath, {sudo: settings.get('sudo', false), flags: 'rf'}).then(function(output) {
+        logger.debug("RM: " + output);
+    });
 }
 
 function cleanResources() {
-    return Q(shellUtils.rm(settings.get('data_dir') + '/tints', {sudo: settings.get('sudo', false), flags: 'rf'}));
+    return shellUtils.rm(settings.get('data_dir') + '/tints', {sudo: settings.get('sudo', false), flags: 'rf'});
 }

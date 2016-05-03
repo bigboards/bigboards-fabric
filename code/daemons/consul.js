@@ -14,24 +14,26 @@ var settings = require('../settings');
 
 function Consul() {
     this.home = process.cwd();
-    this.binary_url = this.home + '/lib/consul/';
     this.command = this.home + '/lib/consul/consul-' + su.architecture();
 
-    this.sudo = true;
+    this.sudo = false;
 
     this.child = null;
     this.consul = new C();
 
     function shutdownHandler(command, sudo) {
         return function() {
-            var pid = sh.pidof(command, {sudo: sudo});
-
-            if (!pid || pid == -1) {
-                logger.error('Unable to stop consul since no PID could be found for the process');
-            } else {
-                logger.warn('Stopping consul by sending it the kill signal');
-                sh.kill(pid, 9, {sudo: sudo});
-            }
+            sh.pidof(command, {sudo: sudo})
+                .then(function(pid) {
+                    if (!pid || pid == -1) {
+                        logger.error('Unable to stop consul since no PID could be found for the process');
+                    } else {
+                        logger.warn('Stopping consul by sending it the kill signal');
+                        return sh.kill(pid, 9, {sudo: sudo}).then(function() {
+                            logger.warn('Stopped consul.');
+                        });
+                    }
+                });
         }
     }
 
@@ -52,111 +54,120 @@ Consul.prototype.client = function() {
    ================================================================================================================ */
 
 Consul.prototype.status = function() {
-    return {
-        daemon: 'consul',
-        running: this.isRunning()
-    }
+    logger.trace("STATUS");
+
+    return this.isRunning()
+        .then(function(running) {
+            return {
+                daemon: 'consul',
+                running: running
+            };
+        });
 };
 
 Consul.prototype.isRunning = function() {
-    var pid = sh.pidof(this.command, {sudo: this.sudo});
+    logger.trace("ISRUNNING");
 
-    return (pid && pid != -1);
+    return sh.pidof(this.command, {sudo: this.sudo})
+        .then(function(pid) {
+            logger.debug(pid);
+            return (pid && pid != -1);
+        });
 };
 
 Consul.prototype.clean = function() {
-    var pid = sh.pidof(this.command, {sudo: this.sudo});
+    logger.trace("CLEAN");
 
-    if (pid) {
-        return Q(sh.kill(pid, 9, {sudo: this.sudo}));
-    } else {
-        return Q(false);
-    }
+    var opts = {sudo: this.sudo};
+
+    return sh.pidof(this.command, opts)
+        .then(function(pid) {
+            if (! pid) return false;
+            return sh.kill(pid, 9, opts);
+        });
 };
 
 Consul.prototype.start = function(args) {
-    var pid = sh.pidof(this.command, {sudo: this.sudo});
-
-    var defer = Q.defer();
-
+    var command = this.command;
+    var sudo = this.sudo;
+    var opts = {sudo: this.sudo};
     var me = this;
 
-    if (pid && pid != -1) {
-        return Q(false);
-    }
+    return sh.pidof(command, opts)
+        .then(function(pid) {
+            logger.debug("pid: '" +  + pid + "'");
 
-    if (! sh.exists(this.command, {sudo: this.sudo})) {
-        return Q.reject(new Errors.DaemonNotInstalledError('consul'));
-    }
+            if (pid && pid != -1) return false;
+            logger.info("consul not started, starting it now.");
 
-    // -- merge the args if there are any
-    var cli = {
-        cmd: (this.sudo) ? 'sudo' : this.command,
-        args: (this.sudo) ? [this.command].concat(args) : args
-    };
+            return sh.exists(command, opts)
+                .then(function(exists) {
+                    if (! exists) throw new Errors.DaemonNotInstalledError('consul');
 
-    try {
-        this.child = spawn(cli.cmd, cli.args);
+                    var defer = Q.defer();
 
-        this.child.stderr.on('data', function (data) {
-            logger.error(data.toString('utf8'));
+                    // -- merge the args if there are any
+                    var cli = {
+                        cmd: (sudo) ? 'sudo' : command,
+                        args: (sudo) ? [command].concat(args) : args
+                    };
+
+                    try {
+                        me.child = spawn(cli.cmd, cli.args);
+
+                        me.child.stderr.on('data', function (data) {
+                            logger.error(data.toString('utf8'));
+                        });
+
+                        var found = false;
+
+                        me.child.stdout.on('data', function (data) {
+                            data = data.toString('utf8');
+                            var synced = data.indexOf('agent: Synced ') != -1;
+
+                            if (synced && !found) {
+                                found = true;
+
+                                defer.resolve(Q.delay(1000).then(function() {
+                                    logger.warn("consul has been started");
+                                }));
+                            }
+
+                            logger.info(data.toString('utf8'));
+                        });
+
+                        me.child.on('close', function (code) {
+                            me.child = null;
+                            logger.info('The consul daemon exited with code ' + code);
+
+                            if (code != 0) defer.reject(new Error('The consul daemon exited with code ' + code));
+                        });
+
+                    } catch (error) {
+                        logger.error(error);
+                        defer.reject(error);
+                    }
+
+                    return defer.promise;
+                });
         });
-
-        var found = false;
-
-        this.child.stdout.on('data', function (data) {
-            data = data.toString('utf8');
-            var syncedService = data.indexOf('agent: Synced service \'consul\'') != -1;
-            var syncedNode = data.indexOf('agent: Synced node info') != -1;
-
-            if ((syncedService || syncedNode) && !found) {
-                found = true;
-
-                defer.resolve(Q.delay(1000).then(function() {
-                    logger.warn("consul has been started");
-                }));
-            }
-
-            logger.info(data.toString('utf8'));
-        });
-
-        this.child.on('close', function (code) {
-            me.child = null;
-            logger.info('The consul daemon exited with code ' + code);
-
-            if (code != 0) defer.reject(new Error('The consul daemon exited with code ' + code));
-        });
-
-    } catch (error) {
-        logger.error(error);
-        defer.reject(error);
-    }
-
-    return defer.promise;
 };
 
 Consul.prototype.stop = function() {
-    var pid = sh.pidof(this.command, {sudo: this.sudo});
+    var opts = {sudo: this.sudo};
 
-    if (!pid || pid == -1) {
-        return Q(false);
-    }
+    return sh.pidof(this.command, opts)
+        .then(function(pid) {
+            if (!pid || pid == -1) return false;
 
-    return Q(sh.kill(pid, 9, {sudo: this.sudo}));
+            return sh.kill(pid, 9, opts);
+        });
 };
 
 Consul.prototype.reload = function() {
-    var pid = sh.pidof(this.command, {sudo: this.sudo});
-
-    if (pid && pid != -1) {
-        logger.debug('Consul daemon running with pid ' + pid + ' stopping it before trying to start');
-
-        if (! sh.kill(pid, 1, {sudo: this.sudo})) {
-            return Q(false);
-        }
-    }
-
-    return start();
+    return stop().then(function() {
+        return start();
+    });
 };
 
 module.exports = Consul;

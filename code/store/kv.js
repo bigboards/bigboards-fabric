@@ -111,6 +111,10 @@ function setFlag(key, flag) {
             flags: flag
         };
 
+        // -- Test to validate the value that is written to consul
+        if (options.value && options.value.indexOf("Value") != -1)
+            logger.error("[KV.SetFlag] Invalid Value written");
+
         consul.kv.set(options, function(err, data) {
             return (err) ? defer.reject(err) : defer.resolve(data);
         });
@@ -149,6 +153,10 @@ function setValue(key, value, acquire, flags) {
 
     if (acquire) options.acquire = acquire;
     if (flags) options.flags = flags;
+
+    // -- Test to validate the value that is written to consul
+    if (options.value && options.value.indexOf("Value") != -1)
+        logger.error("[KV.SetValue] Invalid Value written");
 
     consul.kv.set(options, function(err, success) {
         if (err) return defer.reject(err);
@@ -194,6 +202,10 @@ function updateValue(key, flag, updateHandler) {
             value: JSON.stringify(res, null, 2),
             Flags: flag
         };
+
+        // -- Test to validate the value that is written to consul
+        if (options.value && options.value.indexOf("Value") != -1)
+            logger.error("[KV.Update] Invalid Value written: " + new Error().stack);
 
         consul.kv.set(options, function(err, data) {
             if (err) return defer.reject(err);
@@ -245,25 +257,24 @@ function listKeys(prefix) {
     return defer.promise;
 }
 
-function listenFlagChange(key, listener, recurse, operations) {
+function listenFlagChange(key, listener, recurse, operations, regex) {
     var watch = consul.watch({ method: consul.kv.get, options: { key: key, recurse: recurse, separator: "/" }});
 
     watch.on('change', function(data, res) {
-        if (res.statusCode == 404) {
-            logger.error('Unable to listen for changes since the kv store has no "' + key + '" key');
-            return;
-        }
-
         if (data) {
             data.forEach(function(dataItem) {
-                var goAhead = false;
-                if (! operations) goAhead = true;
-                else {
+                var goAhead = true;
+
+                if (regex && !dataItem.Key.match(regex)) {
+                    goAhead = false;
+                }
+
+                if (operations) {
                     for (var idx in operations) {
                         if (!operations.hasOwnProperty(idx)) continue;
 
-                        if (dataItem.Flags & operations[idx]) {
-                            goAhead = true;
+                        if (! (dataItem.Flags & operations[idx])) {
+                            goAhead = false;
                             break;
                         }
                     }
@@ -303,12 +314,12 @@ function onFlagChange(key, timeout) {
 
             data.forEach(function(dataItem) {
                 // -- we will ignore pending changes
-                if (dataItem.Flags % flags.OPERATION_PENDING == 0) return;
+                if (dataItem.Flags % flags.OPERATION_PENDING || dataItem.Flags % flags.OPERATION_NEW) return;
 
                 var value = JSON.parse(dataItem.Value);
-                if (dataItem.Flags % flags.OPERATION_FAILED == 0) {
+                if (dataItem.Flags % flags.OPERATION_FAILED) {
                     defer.reject(new Error(value.error));
-                } else if (dataItem.Flags % flags.OPERATION_OK == 0) {
+                } else if (dataItem.Flags % flags.OPERATION_OK) {
                     defer.resolve(dataItem);
                 } else {
                     defer.reject(new Error("Invalid key/value item flags"));

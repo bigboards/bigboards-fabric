@@ -40,23 +40,34 @@ RemoteResource.prototype.create = function(tintId, resourceId, resourceType, res
 };
 
 RemoteResource.prototype.removeForTint = function(tintId) {
-    return this.storage.remove(tintId);
+    var me = this;
+
+    return me.storage.childKeys(tintId)
+        .then(function(resourceKeys) {
+            var promises = [];
+
+            resourceKeys.forEach(function(resourceKey) {
+                promises.push(me.storage.remove(resourceKey))
+            });
+
+            return Q.all(promises);
+        })
+        .then(function() {
+            // -- remove the key tint key from the node
+            return me.storage.removeSync(tintId);
+        });
 };
 
 RemoteResource.prototype.removeAll = function() {
-    return storage.childKeys().then(function(nodeTintKeys) {
+    var me = this;
+
+    return me.storage.childKeys().then(function(nodeTintKeys) {
         var promises = [];
 
         nodeTintKeys.forEach(function(nodeTintKey) {
-            promises.push(storage.childKeys(nodeTintKey).then(function(resourceKeys) {
-                var promises = [];
+            var tintId = nodeTintKey.substring(nodeTintKey.lastIndexOf('/'));
 
-                resourceKeys.forEach(function(resourceKey) {
-                    promises.push(storage.remove(resourceKey));
-                });
-
-                return Q.all(promises);
-            }));
+            promises.push(me.removeForTint(tintId));
         });
 
         return Q.all(promises);

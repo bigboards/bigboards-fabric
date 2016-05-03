@@ -79,6 +79,10 @@ function removeKV(path) {
 function setKv(path, value) {
     var defer = Q.defer();
 
+    // -- Test to validate the value that is written to consul
+    if (value && JSON.stringify(value).indexOf("Value") != -1)
+        logger.error("[KV.SetFlag] Invalid Value written");
+
     consul.kv.set(path, JSON.stringify(value), function(err, data) {
         if (err) {
             logger.debug('Unable to set key "' + path + '" inside the consul state store: ' + err);

@@ -7,11 +7,10 @@ var Q = require('q'),
     mkdirp = require('mkdirp'),
     sh = require('shelljs');
 
-var deasync = require('deasync');
 var child_process = require('child_process');
-var exec = deasync(child_process.exec);
+var exec = child_process.execSync;
 
-var log = log4js.getLogger();
+var log = log4js.getLogger('sh');
 
 /**********************************************************************************************************************
  ** GENERAL
@@ -34,114 +33,123 @@ function exists(path, options) {
     if (options && options.sudo) cmd.push('sudo');
     cmd.push('[ -e ' + path + ' ] && echo true || echo false ');
 
-    var res = exec(cmd.join(' '));
-
-    log.debug('exists: ' + cmd.join(' ') + ' = ' + res);
-    return JSON.parse(res);
+    return command(cmd.join(' '), true);
 }
 
 function mkdir(path, options) {
-    var cmd = [];
-    if (options && options.sudo) cmd.push('sudo');
-    cmd.push('mkdir');
-    if (options && options.flags) cmd.push('-' + options.flags);
-    cmd.push('"' + path + '"');
+    return exists(path, {sudo: options && options.sudo})
+        .then(function(exists) {
+            if (exists) return true;
 
-    cmd.push(' && echo true || echo false');
+            var cmd = [];
+            if (options && options.sudo) cmd.push('sudo');
+            cmd.push('mkdir');
+            if (options && options.flags) cmd.push('-' + options.flags);
+            cmd.push('"' + path + '"');
 
-    return JSON.parse(exec(cmd.join(' ')));
+            cmd.push(' && echo true || echo false');
+
+            return command(cmd.join(' '), true);
+        });
 }
 
 function rm(path, options) {
-    try {
-        if (!exists(path, {sudo: options && options.sudo})) {
-            return true;
-        }
+    return exists(path, {sudo: options && options.sudo})
+        .then(function(exists) {
+            if (!exists) return false;
 
-        var cmd = [];
-        if (options && options.sudo) cmd.push('sudo');
-        cmd.push('rm');
+            var cmd = [];
+            if (options && options.sudo) cmd.push('sudo');
+            cmd.push('rm');
 
-        if (options && options.flags) cmd.push('-' + options.flags);
+            if (options && options.flags) cmd.push('-' + options.flags);
 
-        cmd.push('"' + path + '"');
+            cmd.push('"' + path + '"');
 
-        cmd.push(' && echo true || echo false');
+            cmd.push(' && echo true || echo false');
 
-        var res = exec(cmd.join(' '));
-        return JSON.parse(res);
-    } catch (error) {
-        log.error(error);
-        return false;
-    }
+            return command(cmd.join(' '), true);
+        });
 }
 
 function mv(source, target, options) {
-    if (! exists(source, {sudo: options && options.sudo})) return false;
+    return exists(source, {sudo: options && options.sudo})
+        .then(function(exists) {
+            if (! exists) return false;
 
-    var cmd = [];
-    if (options && options.sudo) cmd.push('sudo');
-    cmd.push('mv');
+            var cmd = [];
+            if (options && options.sudo) cmd.push('sudo');
+            cmd.push('mv');
 
-    if (options && options.flags) cmd.push('-' + options.flags);
+            if (options && options.flags) cmd.push('-' + options.flags);
 
-    cmd.push('"' + source + '"');
-    cmd.push('"' + target + '"');
+            cmd.push('"' + source + '"');
+            cmd.push('"' + target + '"');
 
-    cmd.push(' && echo true || echo false');
+            cmd.push(' && echo true || echo false');
 
-    return JSON.parse(exec(cmd.join(' ')));
+            return command(cmd.join(' '), true);
+        });
 }
 
 function cp(source, target, options) {
-    if (! exists(source, {sudo: options && options.sudo})) return false;
+    return exists(source, {sudo: options && options.sudo})
+        .then(function(exists) {
+            if (! exists) return false;
 
-    var cmd = [];
-    if (options && options.sudo) cmd.push('sudo');
-    cmd.push('cp');
+            var cmd = [];
+            if (options && options.sudo) cmd.push('sudo');
+            cmd.push('cp');
 
-    if (options && options.flags) cmd.push('-' + options.flags);
+            if (options && options.flags) cmd.push('-' + options.flags);
 
-    cmd.push('"' + source + '"');
-    cmd.push('"' + target + '"');
+            cmd.push('"' + source + '"');
+            cmd.push('"' + target + '"');
 
-    cmd.push(' && echo true || echo false');
+            cmd.push(' && echo true || echo false');
 
-    return JSON.parse(exec(cmd.join(' ')));
+            return command(cmd.join(' '), true);
+        });
 }
 
 function chmod(path, mode, options) {
-    if (! exists(path, {sudo: options && options.sudo})) return false;
+    return exists(path, {sudo: options && options.sudo})
+        .then(function(exists) {
+            if (! exists) return false;
 
-    var cmd = [];
-    if (options && options.sudo) cmd.push('sudo');
-    cmd.push('chmod');
+            var cmd = [];
+            if (options && options.sudo) cmd.push('sudo');
+            cmd.push('chmod');
 
-    if (options && options.flags) cmd.push('-' + options.flags);
+            if (options && options.flags) cmd.push('-' + options.flags);
 
-    cmd.push(mode);
-    cmd.push('"' + path + '"');
+            cmd.push(mode);
+            cmd.push('"' + path + '"');
 
-    cmd.push(' && echo true || echo false');
+            cmd.push(' && echo true || echo false');
 
-    return JSON.parse(exec(cmd.join(' ')));
+            return command(cmd.join(' '), true);
+        });
 }
 
 function chown(path, owner, options) {
-    if (! exists(path, {sudo: options && options.sudo})) return false;
+    return exists(path, {sudo: options && options.sudo})
+        .then(function(exists) {
+            if (! exists) return false;
 
-    var cmd = [];
-    if (options && options.sudo) cmd.push('sudo');
-    cmd.push('chown');
+            var cmd = [];
+            if (options && options.sudo) cmd.push('sudo');
+            cmd.push('chown');
 
-    if (options && options.flags) cmd.push('-' + options.flags);
+            if (options && options.flags) cmd.push('-' + options.flags);
 
-    cmd.push(owner);
-    cmd.push('"' + path + '"');
+            cmd.push(owner);
+            cmd.push('"' + path + '"');
 
-    cmd.push(' && echo true || echo false');
+            cmd.push(' && echo true || echo false');
 
-    return JSON.parse(exec(cmd.join(' ')));
+            return command(cmd.join(' '), true);
+        });
 }
 
 function pidof(program, options) {
@@ -152,7 +160,10 @@ function pidof(program, options) {
     cmd.push(program);
     cmd.push(') && echo $RES || echo -1');
 
-    return JSON.parse(exec(cmd.join(' ')));
+    return command(cmd.join(' '))
+        .then(function(output) {
+            return parseInt(output);
+        });
 }
 
 function kill(pid, signal, options) {
@@ -167,51 +178,70 @@ function kill(pid, signal, options) {
 
     cmd.push(' && echo true || echo false');
 
-    var result = JSON.parse(exec(cmd.join(' ')));
+    return command(cmd.join(' '), true).then(function(output) {
+        if (!output) {
+            log.warn('Unable to send pid ' + pid + ' a -' + signal + ' signal');
+        }
 
-    if (!result) {
-        log.warn('Unable to send pid ' + pid + ' a -' + signal + ' signal');
-    }
-
-    return result;
+        return output;
+    });
 }
 
 function tar(archive, options) {
-    if (! exists(archive, {sudo: options && options.sudo})) return false;
+    return exists(archive, {sudo: options && options.sudo})
+        .then(function(exists) {
+            if (!exists) return false;
 
-    var cmd = [];
-    if (options && options.sudo) cmd.push('sudo');
-    cmd.push('tar');
+            var cmd = [];
+            if (options && options.sudo) cmd.push('sudo');
+            cmd.push('tar');
 
-    if (options && options.flags) cmd.push('-' + options.flags);
-    if (options && options.dest) cmd.push('-C ' + options.dest);
+            if (options && options.flags) cmd.push('-' + options.flags);
+            if (options && options.dest) cmd.push('-C ' + options.dest);
 
-    cmd.push('"' + archive + '"');
+            cmd.push('"' + archive + '"');
 
-    cmd.push(' && echo true || echo false');
+            cmd.push(' && echo true || echo false');
 
-    return JSON.parse(exec(cmd.join(' ')));
+            return command(cmd.join(' '), true);
+        });
 }
 
 function unzip(archive, options) {
-    if (! exists(archive, {sudo: options && options.sudo})) return false;
+    return exists(archive, {sudo: options && options.sudo})
+        .then(function(exists) {
+            if (! exists) return false;
 
-    var cmd = [];
-    if (options && options.sudo) cmd.push('sudo');
-    cmd.push('unzip');
-    cmd.push('-qq -o');
+            var cmd = [];
+            if (options && options.sudo) cmd.push('sudo');
+            cmd.push('unzip');
+            cmd.push('-qq -o');
 
-    if (options && options.dest) {
-        mkdir(options.dest, {sudo: options.sudo, flags: 'p'});
-        cmd.push('-d ' + options.dest);
+            if (options && options.dest) {
+                mkdir(options.dest, {sudo: options.sudo, flags: 'p'});
+                cmd.push('-d ' + options.dest);
+            }
+
+            cmd.push('"' + archive + '"');
+
+            cmd.push(' && echo true || echo false');
+
+            return command(cmd.join(' '), true);
+        });
+}
+
+function command(cmd, asJson) {
+    var defer = Q.defer();
+    try {
+        log.trace(cmd);
+        var res = exec(cmd);
+
+        if (res) res = res.toString();
+
+        defer.resolve(res);
+    } catch (error) {
+        defer.reject(error);
     }
 
-    cmd.push('"' + archive + '"');
-
-    cmd.push(' && echo true || echo false');
-
-    console.log(cmd.join(' '));
-    var res = exec(cmd.join(' '));
-
-    return JSON.parse(res);
+    return defer.promise;
 }

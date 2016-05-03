@@ -8,7 +8,7 @@ var Watcher = require('../cluster/storage/watcher');
 var system = require('../local/system');
 
 var localNode = require('../local');
-var tintWatcher = new Watcher('tints', require('../master/tint.reactor'));
+var tintWatcher = new Watcher('tints', /^tints\/[a-zA-Z0-9\-\_]+\/[a-zA-Z0-9\-\_]+$/m, require('../master/tint.reactor'));
 
 var store = {
     kv: require('../store/kv'),
@@ -68,10 +68,13 @@ function stop() {
 }
 
 function status() {
-    return  {
-        joined: settings.has('cluster_key'),
-        started: localNode.isRunning()
-    }
+    return localNode.isRunning()
+        .then(function(running) {
+            return  {
+                joined: settings.has('cluster_key'),
+                started: running
+            }
+        });
 }
 
 function raceForLeader(localIp, localPort, sessionId) {

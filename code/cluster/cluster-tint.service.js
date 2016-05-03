@@ -19,11 +19,11 @@ module.exports = {
 
 function installTint(definition) {
     // -- todo: make sure a stack tint has not been installed yet
-    return kv.set('tints/' + tu.id(definition), definition, null, consulUtils.flags.CREATE + consulUtils.flags.OPERATION_PENDING);
+    return kv.set('tints/' + tu.id(definition), definition, null, consulUtils.flags.CREATE + consulUtils.flags.OPERATION_NEW);
 }
 
 function uninstallTint(profileId, slug) {
-    return kv.flag('tints/' + profileId + '$' + slug, consulUtils.flags.REMOVE + consulUtils.flags.OPERATION_PENDING);
+    return kv.flag('tints/' + profileId + '/' + slug, consulUtils.flags.REMOVE + consulUtils.flags.OPERATION_NEW);
 }
 
 function listTints() {
@@ -42,7 +42,7 @@ function listTints() {
 }
 
 function getTint(profileId, slug) {
-    return _getExtendedNodeDetail('tints/' + profileId + '$' + slug);
+    return _getExtendedNodeDetail('tints/' + profileId + '/' + slug);
 }
 
 function _getTintListItem(tintPath) {

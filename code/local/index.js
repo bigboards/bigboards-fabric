@@ -1,4 +1,5 @@
-var Watcher = require('../cluster/storage/watcher'),
+var Q = require('q'),
+    Watcher = require('../cluster/storage/watcher'),
     Introspecter = require('../introspecter'),
     system = require('./system'),
     settings = require('../settings'),
@@ -6,11 +7,13 @@ var Watcher = require('../cluster/storage/watcher'),
     kv = require('../store/kv'),
     log4js = require('log4js'),
     su = require('../utils/sys-utils'),
-    ConsulDaemon = require('../daemons/consul');
+    consulUtils = require('../utils/consul-utils'),
+    ConsulDaemon = require('../daemons/consul'),
+    ScopedStorage = require('../cluster/storage');
 
 var localWatchers = {
-    resource: new Watcher('nodes/' + system.id + '/resources', require('./resource.reactor')),
-    daemon: new Watcher('nodes/' + system.id + '/daemons', require('./daemon.reactor'))
+    resource: new Watcher('nodes/' + system.id + '/resources', null, require('./resource.reactor')),
+    daemon: new Watcher('nodes/' + system.id + '/daemons', null, require('./daemon.reactor'))
 };
 
 var logger = log4js.getLogger('node.' + system.id);
@@ -19,6 +22,7 @@ var tickerLog = log4js.getLogger('ticker.' + system.id);
 var fabricSessionId = null;
 var ticker = null;
 var consulDaemon = new ConsulDaemon();
+var storage = new ScopedStorage();
 
 module.exports = {
     isRunning: isRunning,
@@ -82,11 +86,42 @@ function start() {
             logger.debug('Start ticking');
             ticker = setInterval(function() {
                 session.renew(fabricSessionId).then(function() {
-                    tickerLog.debug("Renewed the fabric session");
+                    tickerLog.trace("Renewed the fabric session");
                 }, function (error) {
                     tickerLog.warn("Unable to renew the fabric session: " + error);
                 });
             }, 15 * 1000)
+        })
+        .then(function() {
+            // -- start the daemons that need to be started
+            return kv.children('nodes/' + system.id + '/daemons/').then(function(tintOwners) {
+                var promises = [];
+
+                tintOwners.forEach(function(ownerKey) {
+                    promises.push(kv.children(ownerKey).then(function(tintKeys) {
+                        var promises = [];
+
+                        tintKeys.forEach(function(tintKey) {
+                            promises.push(kv.children(tintKey).then(function(daemonKeys) {
+                                var promises = [];
+
+                                daemonKeys.forEach(function(daemonKey) {
+                                    promises.push(storage.signal(daemonKey, consulUtils.flags.START));
+                                });
+
+                                return Q.all(promises);
+                            }));
+                        });
+
+                        return Q.all(promises);
+                    }));
+                });
+
+                return Q.all(promises);
+            })
+        })
+        .then(function() {
+            logger.info("Node up and running!");
         })
         .fail(function(error) {
             logger.error('Fabric session creation failed!');

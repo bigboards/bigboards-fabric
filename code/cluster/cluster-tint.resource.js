@@ -13,7 +13,7 @@ function listTints(req, res) {
 }
 
 function getTint(req, res) {
-    API.handle.service(req, res, TintService.get(req.param('profileId'), req.param('slug')));
+    API.handle.service(req, res, TintService.get(req.params.profileId, req.params.slug));
 }
 
 function installTint(req, res) {
@@ -21,6 +21,6 @@ function installTint(req, res) {
 }
 
 function uninstallTint(req, res) {
-    API.handle.service(req, res, TintService.uninstall(req.param('profileId'), req.param('slug')));
+    API.handle.service(req, res, TintService.uninstall(req.params.profileId, req.params.slug));
 }
 

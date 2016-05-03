@@ -1,5 +1,6 @@
 var daemon = require('./daemon'),
     system = require('./system'),
+    kv = require('../store/kv'),
     Q = require('q');
 
 // -- logging
@@ -33,16 +34,39 @@ function processUpdate(key, data) {
     return Q();
 }
 
-function processRemove(key, data) {
-    logger.info('Removing daemon ' + data.id);
+function processRemove(key) {
+    // -- a daemon you want to remove has no data associated with it since it is merely a folder holding
+    // -- the actual daemons. This means we need to parse the key and pass that result.
+    var regex = new RegExp("nodes/(.*)/daemons/(.*)/(.*)/(.*)");
+    var parts = key.match(regex);
 
-    return daemon.remove(data).then(
-        function() { logger.info('removed daemon ' + data.id) },
-        function(error) { logger.error(error); }
-    );
+    return kv.get.key('tints/' + parts[2] + '/' + parts[3]).then(function(tint) {
+        // -- get the definition from the tint
+        var driverId = null;
+        var serviceId = null;
+        var daemonId = null;
+        tint.services.forEach(function(service) {
+            service.daemons.forEach(function(daemon) {
+                var id = service.id + '-' + daemon.id + '-' + system.id;
+                if (id == parts[4]) {
+                    driverId = daemon.driver;
+                    daemonId = daemon.id;
+                    serviceId = service.id;
+                }
+            });
+        });
+
+        if (!driverId || !daemonId) return Q.reject(new Error("Unable to determine which daemon to remove"));
+        logger.info('Removing daemon ' + serviceId + '-' + daemonId);
+
+        return daemon.remove(driverId, serviceId, daemonId).then(
+            function() { logger.info('removed daemon ' + serviceId + '-' + daemonId) },
+            function(error) { logger.error(error); }
+        );
+    });
 }
 
-function processCleanup(key, data) {
+function processCleanup() {
     logger.info('Removing all daemons');
 
     return daemon.clean().then(

@@ -42,13 +42,15 @@ function start() {
     require('./api')(app, io);
 
     // -- start the node if it has been configured
-    if (membershipService.status().joined) {
-        logger.info("The node is already a member of the cluster. We can proceed with starting the cluster link");
-        membershipService.start();
-    }
+    membershipService.status().then(function(status) {
+        if (status.joined) {
+            logger.info("The node is already a member of the cluster. We can proceed with starting the cluster link");
+            membershipService.start();
+        }
 
-    app.listen(app.get('port'), function() {
-        logger.info('Node API up and running on port ' + app.get('port'));
+        app.listen(app.get('port'), function() {
+            logger.info('Node API up and running on port ' + app.get('port'));
+        });
     });
 
     return app;

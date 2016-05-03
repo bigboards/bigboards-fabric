@@ -2,13 +2,8 @@ var events = require('../store/events'),
     services = require('../store/services'),
     kv = require('../store/kv'),
     system = require('./system'),
-    settings = require('../settings'),
     drivers = require('./drivers'),
     Q = require('q');
-
-// -- utilities
-var consulUtils = require('../utils/consul-utils'),
-    shellUtils = require('../utils/sh-utils');
 
 // -- logging
 var log4js = require('log4js'),
@@ -49,14 +44,16 @@ function createDaemon(daemon) {
         });
 }
 
-function removeDaemon(daemon) {
-    var driver = drivers[daemon.driver];
+function removeDaemon(driverId, serviceId, daemonId) {
+    var driver = drivers[driverId];
     if (! driver)
-        return Q.reject('Unknown daemon driver "' + daemon.driver + '"');
+        return Q.reject('Unknown daemon driver "' + driverId + '"');
 
-    return driver.remove(daemon.id)
+    logger.info("Removing " + serviceId + '-' + daemonId);
+
+    return driver.remove(serviceId + '-' + daemonId + '-' + system.id)
         .then(function() {
-            return services.deregister(daemon.id);
+            return services.deregister(serviceId + '-' + daemonId);
         });
 }
 

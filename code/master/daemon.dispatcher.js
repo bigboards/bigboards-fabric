@@ -37,7 +37,7 @@ function startTintDaemons(tint) {
         });
     });
 
-    return promises;
+    return Q.all(promises);
 }
 
 function startDaemon(tint, service, daemon) {
@@ -65,7 +65,7 @@ function stopTintDaemons(tint) {
         });
     });
 
-    return promises;
+    return Q.all(promises);
 }
 
 function stopDaemon(tint, service, daemon) {

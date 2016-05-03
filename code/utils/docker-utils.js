@@ -142,8 +142,15 @@ function destroyContainerById(id, options) {
 function startContainer(container) {
     var defer = Q.defer();
 
-    container.start(function (err, res) {
-        return (err) ? defer.reject(err) : defer.resolve(res);
+    // -- check if the container is already running
+    container.inspect(function (err, res) {
+        if (err) return defer.reject(err);
+
+        if (! res.State.Running) {
+            container.start(function (err, res) {
+                return (err) ? defer.reject(err) : defer.resolve(res);
+            });
+        } else defer.resolve();
     });
 
     return defer.promise;
@@ -158,8 +165,14 @@ function startContainerById(id) {
 function stopContainer(container) {
     var defer = Q.defer();
 
-    container.stop(function (err, res) {
-        return (err) ? defer.reject(err) : defer.resolve(res);
+    container.inspect(function (err, res) {
+        if (err) return defer.reject(err);
+
+        if (res.State.Running) {
+            container.stop(function (err, res) {
+                return (err) ? defer.reject(err) : defer.resolve(res);
+            });
+        } else defer.resolve();
     });
 
     return defer.promise;

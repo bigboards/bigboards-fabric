@@ -3,15 +3,16 @@ var Q = require('q'),
     fs = require('../utils/fs-utils');
 
 var flags = {
-    OPERATION_PENDING: 1,
-    OPERATION_OK: 2,
-    OPERATION_FAILED: 4,
-    CREATE: 8,
-    UPDATE: 16,
-    REMOVE: 32,
-    CLEANUP: 64,
-    START: 128,
-    STOP: 256
+    OPERATION_NEW: 1,
+    OPERATION_PENDING: 2,
+    OPERATION_OK: 4,
+    OPERATION_FAILED: 8,
+    CREATE: 16,
+    UPDATE: 32,
+    REMOVE: 64,
+    CLEANUP: 128,
+    START: 256,
+    STOP: 512
 };
 
 module.exports = {
@@ -55,7 +56,8 @@ function parseFlag(flag) {
     else if (flag & flags.STOP) operation = flags.STOP;
 
     var state = null;
-    if (flag & flags.OPERATION_PENDING) state = flags.OPERATION_PENDING;
+    if (flag & flags.OPERATION_NEW) state = flags.OPERATION_NEW;
+    else if (flag & flags.OPERATION_PENDING) state = flags.OPERATION_PENDING;
     else if (flag & flags.OPERATION_OK) state = flags.OPERATION_OK;
     else if (flag & flags.OPERATION_FAILED) state = flags.OPERATION_FAILED;
 
@@ -64,6 +66,7 @@ function parseFlag(flag) {
 
 function flagToName(flag) {
     switch(flag) {
+        case flags.OPERATION_NEW: return 'new';
         case flags.OPERATION_PENDING: return 'pending';
         case flags.OPERATION_OK: return 'ok';
         case flags.OPERATION_FAILED: return 'failed';

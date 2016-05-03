@@ -1,5 +1,6 @@
 var cluster = require('../store/cluster'),
-    consulUtils = require('../utils/consul-utils');
+    consulUtils = require('../utils/consul-utils'),
+    Q = require('q');
 
 // -- storage
 var ScopedStorage = require('../cluster/storage');
@@ -33,15 +34,9 @@ RemoteDaemon.prototype.removeAll = function() {
         var promises = [];
 
         nodeTintKeys.forEach(function(nodeTintKey) {
-            promises.push(me.storage.childKeys(nodeTintKey).then(function(daemonKeys) {
-                var promises = [];
+            var tintId = nodeTintKey.substring(nodeTintKey.lastIndexOf('/'));
 
-                daemonKeys.forEach(function(daemonKey) {
-                    promises.push(me.storage.remove(daemonKey));
-                });
-
-                return Q.all(promises);
-            }));
+            promises.push(me.removeForTint(tintId));
         });
 
         return Q.all(promises);
@@ -51,15 +46,21 @@ RemoteDaemon.prototype.removeAll = function() {
 RemoteDaemon.prototype.removeForTint = function(tintId) {
     var me = this;
 
-    return me.storage.childKeys(tintId).then(function(daemonKeys) {
-        var promises = [];
+    return me.storage.childKeys(tintId)
+        .then(function(daemonKeys) {
+            // -- remove all the daemons
+            var promises = [];
 
-        daemonKeys.forEach(function(daemonKey) {
-            promises.push(me.storage.remove(daemonKey))
+            daemonKeys.forEach(function(daemonKey) {
+                promises.push(me.storage.remove(daemonKey))
+            });
+
+            return Q.all(promises);
+        })
+        .then(function() {
+            // -- remove the key tint key from the node
+            return me.storage.removeSync(tintId);
         });
-
-        return Q.all(promises);
-    });
 };
 
 RemoteDaemon.prototype.startDaemon = function(tintId, serviceId, daemonId) {

@@ -50,18 +50,17 @@ function processCreate(key, tint) {
 
 function processRemove(key, tint) {
     logger.debug('removing containers and resources from the nodes');
-    return DaemonDispatcher.stop(tint)
-        .then(function() {
-            return Q.all([
+    return Q.all([
                 DaemonDispatcher.remove.byTint(tint),
                 ResourceDispatcher.remove.byTint(tint)
-            ]);
-        }).then(function() {
-            return kv.remove.prefix('resources')
-        }).then(function() {
+            ])
+        .then(function() {
             logger.debug('removing the tint from the consul store');
             return kv.remove.prefix(key);
-        });
+        }).then(
+            function() { logger.info('tint ' + tu.id(tint) + ' removed') },
+            function(error) { logger.error(error); }
+        );
 }
 
 function processCleanup(key, data) {
@@ -71,7 +70,7 @@ function processCleanup(key, data) {
         ResourceDispatcher.remove.all()
     ]).then(function() {
         logger.debug('removing all tints from the consul store');
-        return kv.remove.prefix('/tints/');
+        return kv.remove.prefix('tints/');
     });
 }
 
