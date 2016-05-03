@@ -40,8 +40,9 @@ hive_port: 80
 
 ## Current Status
 Currently we are able to set up clusters in our lab environment running all intel 
-nodes using ubuntu 14.04 LTS. ARM nodes have not been tested yet, neither have other 
-Operating Systems.
+nodes using ubuntu 14.04 LTS. 
+
+ARM nodes have not been tested yet, neither have other Operating Systems.
 
 ## Roadmap
  - Test on Intel
@@ -52,7 +53,7 @@ Operating Systems.
  - Gather feedback and see how we can improve
 
 ## API
-Descent API documentation is on the todo list, For now a list of the endpoints can be found here.
+Decent API documentation is on the todo list, For now a list of the endpoints can be found here.
 
 ### Node Status
 #### GET /v1/status
@@ -67,8 +68,8 @@ Make this node a member of a cluster. For this a specific payload has to be prov
   "name": "",       // the name of your cluster ([a-Z,0-9,-,_]
   "key": "",        // the encryption token used for the cluster
   "role": "",       // the role this node would take in this cluster (server or client)
-  "nodes": [ ],     // a list of other nodes that are part of the cluster
-  "servers": 2      // the number of servers there are to be in total (max. 5)
+  "nodes": [ ],     // a list of other nodes that are part of the cluster (min. 1)
+  "servers": 2      // the number of quorum members (max. 5) in the cluster; must be identical for all members!
 }
 ```
 
