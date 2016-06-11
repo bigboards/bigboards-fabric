@@ -29,28 +29,40 @@ function _getNodeStatus() {
     logger.debug('Reading the status of the nodes ');
 
     return kv.get.prefix('nodes').then(function(values) {
-        var regex = new RegExp('nodes\/(.*)/daemons\/(.*)');
+        var nodeRegex = new RegExp('nodes\/(.*)');
+        var daemonRegex = new RegExp('nodes\/(.*)/daemons\/(.*)');
         var result = {
             nodes: {},
             daemons: {}
         };
 
         values.forEach(function(value) {
-            if (! regex.test(value.Key)) return;
 
+
+            var regex = (! daemonRegex.test(value.Key)) ? nodeRegex : daemonRegex;
             var parts = regex.exec(value.Key);
-            var daemon = parts[2];
             var node = parts[1];
 
-            if (! result.nodes[node]) result.nodes[node] = { daemons: {}, stats: { total: 0, 0: 0, 1: 0, 2: 0, 999: 0} };
-            result.nodes[parts[1]].daemons[daemon] = value.Flags;
-            result.nodes[node].stats[value.Flags] = result.nodes[node].stats[value.Flags] + 1;
-            result.nodes[node].stats.total += 1;
+            if (!result.nodes[node]) result.nodes[node] = {
+                daemons: {},
+                stats: {total: 0, 0: 0, 1: 0, 2: 0, 999: 0}
+            };
 
-            if (! result.daemons[daemon]) result.daemons[daemon] = { nodes: {}, stats: { total: 0, 0: 0, 1: 0, 2: 0, 999: 0} };
-            result.daemons[daemon].nodes[node] = value.Flags;
-            result.daemons[daemon].stats[value.Flags] = result.daemons[daemon].stats[value.Flags] + 1;
-            result.daemons[daemon].stats.total += 1;
+            if (parts.length > 2) {
+                var daemon = parts[2];
+
+                result.nodes[node].daemons[daemon] = value.Flags;
+                result.nodes[node].stats[value.Flags] = result.nodes[node].stats[value.Flags] + 1;
+                result.nodes[node].stats.total += 1;
+
+                if (!result.daemons[daemon]) result.daemons[daemon] = {
+                    nodes: {},
+                    stats: {total: 0, 0: 0, 1: 0, 2: 0, 999: 0}
+                };
+                result.daemons[daemon].nodes[node] = value.Flags;
+                result.daemons[daemon].stats[value.Flags] = result.daemons[daemon].stats[value.Flags] + 1;
+                result.daemons[daemon].stats.total += 1;
+            }
         });
 
         return result;

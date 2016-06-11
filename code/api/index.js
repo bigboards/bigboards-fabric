@@ -25,7 +25,6 @@ module.exports = function(app, io) {
     API.register.post(app, '/v1/membership/status', resources.membership.start);
     API.register.delete(app, '/v1/membership/status', resources.membership.stop);
 
-    // todo: this returns invalid content
     API.register.guarded.get(app, '/v1/cluster', scopeMiddleware, resources.cluster.status.get);
 
     API.register.guarded.get(app, '/v1/cluster/services', scopeMiddleware, resources.cluster.service.list);
@@ -38,7 +37,9 @@ module.exports = function(app, io) {
     API.register.guarded.get(app, '/v1/cluster/nodes', scopeMiddleware, resources.cluster.node.list);
     API.register.guarded.get(app, '/v1/cluster/nodes/:id', scopeMiddleware, resources.cluster.node.get);
 
+    // todo: this returns invalid content
     API.register.guarded.get(app, '/v1/cluster/tints', scopeMiddleware, resources.cluster.tint.list);
+
     API.register.guarded.post(app, '/v1/cluster/tints', scopeMiddleware, resources.cluster.tint.install);
     API.register.guarded.get(app, '/v1/cluster/tints/:profileId/:slug', scopeMiddleware, resources.cluster.tint.get);
     API.register.guarded.delete(app, '/v1/cluster/tints/:profileId/:slug', scopeMiddleware, resources.cluster.tint.uninstall);

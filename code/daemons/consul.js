@@ -133,7 +133,7 @@ Consul.prototype.start = function(args) {
                                 }));
                             }
 
-                            logger.info(data.toString('utf8'));
+                            logger.info(data.toString('utf8').replace(/^\s+|\s+$/g, ''));
                         });
 
                         me.child.on('close', function (code) {
