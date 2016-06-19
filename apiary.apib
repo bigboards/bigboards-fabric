@@ -262,6 +262,31 @@ The services endpoints are responsible for retrieving and manipulating the servi
             }
         }]
         
+## Settings [/v1/settings]
+The settings endpoint allows for cluster settings to be modified.
+        
+### get the settings [GET]
+
++ Response 200 (application/json)
+
+        {
+            setting_1: "value_1",
+            setting_2: "value_2",
+            setting_3: true,
+            setting_4: 23
+        }
+        
+### set a settings [POST]
+
++ Request (application/json)
+
+        {
+            setting_2: "new_value_2",
+            setting_3: false
+        }
+
++ Response 200 (application/json)
+        
 ## Status [/v1/status]
 The status endpoints gives details about the node currenctly connected to. It also allows the node to be 
 activated and deactivated.
