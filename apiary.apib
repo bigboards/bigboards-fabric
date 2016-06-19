@@ -15,6 +15,8 @@ Apps are the applications that run on the cluster. These applications are deploy
 participating in the cluster based on the deployment plan provided during app installation.
 
 ### list installed apps [GET]
+Get a list of all installed applications. Currently only one installed app can be installed at the same 
+time, but this will change in the future.
 
 + Response 200 (application/json)
 
@@ -22,7 +24,7 @@ participating in the cluster based on the deployment plan provided during app in
 
 ### install an app [POST]
 
-Install a new app onto the cluster. 
+Install a new app onto the cluster.
 
 + Request (application/json)
 
@@ -98,12 +100,14 @@ Install a new app onto the cluster.
 ## App [/v1/apps/{owner}/{slug}]
 
 ### get app details [GET]
+Get the details of a specific app.
 
 + Response 200 (application/json)
 
         {}
         
 ### uninstall app [DELETE]
+Remove the app from the cluster.
 
 + Response 200 (application/json)
 
@@ -133,15 +137,43 @@ Install a new app onto the cluster.
             }
         }
         
+### join the cluster [POST]
+
+Join this node to the given cluster
+
++ Request (application/json)
+
+        {}
+
++ Response 200 (application/json)
+
+        {}
+
+### leave the cluster [DELETE]
+
+Remove this node from the given cluster
+
++ Request (application/json)
+
+        {}
+
++ Response 200 (application/json)
+
+        {}
+        
 ## Events [/v1/events]
 Events are the result of actions happening on the cluster. They are meant to get insights in what is happening
-on the cluster
+on the cluster.
         
 ### list all events [GET]
 
 + Response 200 (application/json)
 
         []
+        
++ Response 406 (application/json)
+
+        {}
         
 ## Nodes [/v1/nodes]
 Nodes are the dna of the cluster. These endpoints give you some insights into what they are doing, but also
@@ -169,7 +201,8 @@ let you manipulate their purpose.
 + Parameters
     + node_id (string) - ID of the node
     
-### get details of a specific node [GET]
+### get node details [GET]
+Get the details of a specific node in the cluster.
         
 + Response 200 (application/json)
 
@@ -228,3 +261,32 @@ The services endpoints are responsible for retrieving and manipulating the servi
                 }
             }
         }]
+        
+## Status [/v1/status]
+The status endpoints gives details about the node currenctly connected to. It also allows the node to be 
+activated and deactivated.
+
+### get status [GET]
+Get the status of the current node and the low level daemons running on it.
+
++ Response 200 (application/json)
+
+        {
+        }
+        
+### activate the node [POST]
+Activate the node currently connected to. This will start the underlaying daemons used to communicate with 
+the cluster.
+
++ Response 200 (application/json)
+
+        {}
+        
+### deactivate the node [DELETE]
+Deactivate the node currently connected to. This will stop the underlaying daemons used to communicate with 
+the cluster. As a result, after calling this endpoint, the node will not be an active member of the cluster.
+The node will not be removed from the cluster though, so it can be reactivated later.
+
++ Response 200 (application/json)
+
+        {}
