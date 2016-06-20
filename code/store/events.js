@@ -13,13 +13,13 @@ module.exports = {
         FAILED: 'failed'
     },
     names: {
-        TINT_INSTALL_PENDING: 'tint:install:pending',
-        TINT_INSTALL_SUCCESS: 'tint:install:success',
-        TINT_INSTALL_FAILED: 'tint:install:failed',
+        APP_INSTALL_PENDING: 'app:install:pending',
+        APP_INSTALL_SUCCESS: 'app:install:success',
+        APP_INSTALL_FAILED: 'app:install:failed',
 
-        TINT_UNINSTALL_PENDING: 'tint:uninstall:pending',
-        TINT_UNINSTALL_SUCCESS: 'tint:uninstall:success',
-        TINT_UNINSTALL_FAILED: 'tint:uninstall:failed',
+        APP_UNINSTALL_PENDING: 'app:uninstall:pending',
+        APP_UNINSTALL_SUCCESS: 'app:uninstall:success',
+        APP_UNINSTALL_FAILED: 'app:uninstall:failed',
 
         RESOURCE_LOAD_PENDING: 'resource:load:pending',
         RESOURCE_LOAD_SUCCESS: 'resource:load:success',
@@ -57,8 +57,8 @@ module.exports = {
         DAEMON_STOP_SUCCESS: 'daemon:stop:success',
         DAEMON_STOP_FAILED: 'daemon:stop:failed',
 
-        TINT_INSTALL: 'tint:install',
-        TINT_UNINSTALL: 'tint:uninstall',
+        APP_INSTALL: 'app:install',
+        APP_UNINSTALL: 'app:uninstall',
 
         RESOURCE_LOAD: 'resource:load',
         RESOURCE_INSTALL: 'resource:install',

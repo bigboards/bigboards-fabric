@@ -1,6 +1,6 @@
 angular.module('mmc.node').controller('TintListController', TintListController);
 
-TintListController.$inject = ['Page', 'TintService', '$location'];
+TintListController.$inject = ['Page', 'AppService', '$location'];
 
 function TintListController(Page, TintService, $location) {
     var vm = this;

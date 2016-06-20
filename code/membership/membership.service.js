@@ -8,7 +8,7 @@ var Watcher = require('../cluster/storage/watcher');
 var system = require('../local/system');
 
 var localNode = require('../local');
-var tintWatcher = new Watcher('tints', /^tints\/[a-zA-Z0-9\-\_]+\/[a-zA-Z0-9\-\_]+$/m, require('../master/tint.reactor'));
+var appWatcher = new Watcher('apps', /^apps\/[a-zA-Z0-9\-\_]+\/[a-zA-Z0-9\-\_]+$/m, require('../master/app.reactor'));
 
 var store = {
     kv: require('../store/kv'),
@@ -109,7 +109,7 @@ function raceForLeader(localIp, localPort, sessionId) {
 
 function connected(leader, localIp, localPort) {
     if (leader) {
-        tintWatcher.start();
+        appWatcher.start();
     } else {
         var watch = consul.watch({ method: consul.kv.get, options: { key: 'leader', recurse: recurse }});
         watch.on('change', function(data, res) {
@@ -130,8 +130,8 @@ function connected(leader, localIp, localPort) {
 }
 
 function disconnected() {
-    logger.debug('Stop watching for tints');
-    tintWatcher.stop();
+    logger.debug('Stop watching for apps');
+    appWatcher.stop();
 }
 
 

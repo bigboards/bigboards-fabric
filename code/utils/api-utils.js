@@ -60,7 +60,7 @@ module.exports.registerDelete = function(app, path, fn) {
     winston.info('[DELETE] ' + path);
 };
 
-module.exports.isTint = function(obj) {
+module.exports.isApp = function(obj) {
     if (! obj) return false;
     if (! obj.slug) return false;
     if (! obj.owner) return false;
@@ -69,8 +69,8 @@ module.exports.isTint = function(obj) {
     return true;
 };
 
-module.exports.isTintWithUri = function(obj) {
-    if (! this.isTint(obj)) return false;
+module.exports.isAppWithUri = function(obj) {
+    if (! this.isApp(obj)) return false;
     if (! obj.uri) return false;
 
     return true;

@@ -1,5 +1,5 @@
 angular.module('mmc')
-    .factory('TintService', TintService);
+    .factory('AppService', TintService);
 
 TintService.$inject = [ 'settings', '$resource' ];
 

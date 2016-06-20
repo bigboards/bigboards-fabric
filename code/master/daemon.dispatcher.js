@@ -1,7 +1,7 @@
 var kv = require('../store/kv'),
     events = require('../store/events'),
     settings = require('../settings'),
-    tu = require('../utils/tint-utils'),
+    tu = require('../utils/app-utils'),
     Q = require('q'),
     log4js = require('log4js');
 
@@ -11,74 +11,74 @@ var containerModelMapper = require('../model/container/v2.0');
 var cluster = require('../cluster');
 
 /**
- * The container dispatcher will take a tint and a container definition and generate the container definition and
+ * The container dispatcher will take an app and a container definition and generate the container definition and
  * resource definition needed for a node to deploy a container and the resources it requires.
  */
 module.exports = {
-    start: startTintDaemons,
-    stop: stopTintDaemons,
+    start: startAppDaemons,
+    stop: stopAppDaemons,
     install: {
-        byTint: installTintDaemons
+        byApp: installAppDaemons
     },
     remove: {
         all: removeAllDaemons,
-        byTint: removeTintDaemons
+        byApp: removeAppDaemons
     }
 };
 
 // ====================================================================================================================
 // == Start & Stop
 // ====================================================================================================================
-function startTintDaemons(tint) {
+function startAppDaemons(app) {
     var promises = [];
-    tint.services.forEach(function(service) {
+    app.services.forEach(function(service) {
         service.daemons.forEach(function(daemon) {
-            promises.push(startDaemon(tint, service, daemon));
+            promises.push(startDaemon(app, service, daemon));
         });
     });
 
     return Q.all(promises);
 }
 
-function startDaemon(tint, service, daemon) {
-    var tintId = tu.id(tint);
+function startDaemon(app, service, daemon) {
+    var appId = tu.id(app);
 
-    logger.info('Starting daemon ' + service.id + '.' + daemon.id + ' for tint ' + tintId);
+    logger.info('Starting daemon ' + service.id + '.' + daemon.id + ' for app ' + appId);
 
     return cluster.nodes.byExpression(daemon.instances)
         .then(function(nodes) {
             var promises = [];
 
             nodes.forEach(function(node) {
-                promises.push(node.daemons.startDaemon(tintId, service.id, daemon.id));
+                promises.push(node.daemons.startDaemon(appId, service.id, daemon.id));
             });
 
             return Q.all(promises);
         });
 }
 
-function stopTintDaemons(tint) {
+function stopAppDaemons(app) {
     var promises = [];
-    tint.services.forEach(function(service) {
+    app.services.forEach(function(service) {
         service.daemons.forEach(function(daemon) {
-            promises.push(stopDaemon(tint, service, daemon));
+            promises.push(stopDaemon(app, service, daemon));
         });
     });
 
     return Q.all(promises);
 }
 
-function stopDaemon(tint, service, daemon) {
-    var tintId = tu.id(tint);
+function stopDaemon(app, service, daemon) {
+    var appId = tu.id(app);
 
-    logger.info('Stopping daemon ' + service.id + '.' + daemon.id + ' for tint ' + tintId);
+    logger.info('Stopping daemon ' + service.id + '.' + daemon.id + ' for app ' + appId);
 
     return cluster.nodes.byExpression(daemon.instances)
         .then(function(nodes) {
             var promises = [];
 
             nodes.forEach(function(node) {
-                promises.push(node.daemons.stopDaemon(tintId, service.id, daemon.id));
+                promises.push(node.daemons.stopDaemon(appId, service.id, daemon.id));
             });
 
             return Q.all(promises);
@@ -88,27 +88,27 @@ function stopDaemon(tint, service, daemon) {
 // ====================================================================================================================
 // == Install
 // ====================================================================================================================
-function installTintDaemons(tint) {
+function installAppDaemons(app) {
     var promises = [];
 
-    tint.services.forEach(function(service) {
+    app.services.forEach(function(service) {
         service.daemons.forEach(function(daemon) {
-            promises.push(installDaemon(tint, service, daemon));
+            promises.push(installDaemon(app, service, daemon));
         })
     });
 
     return Q.all(promises)
 }
 
-function installDaemon(tint, service, daemon) {
-    logger.info('Installing daemon ' + service.id + '.' + daemon.id + ' for tint ' + tu.id(tint));
-    var tintId = tu.id(tint);
+function installDaemon(app, service, daemon) {
+    logger.info('Installing daemon ' + service.id + '.' + daemon.id + ' for app ' + tu.id(app));
+    var appId = tu.id(app);
 
     // -- convert daemon volumes pointing to resources to use absolute paths instead of resource names
     var volumes = daemon.configuration.Mounts;
     if (volumes) {
         volumes.forEach(function (volume) {
-            var tintFsDir = settings.get('data_dir') + '/tints/' + tintId + '/resources';
+            var appFsDir = settings.get('data_dir') + '/apps/' + appId + '/resources';
 
             var filename;
             if (volume.Source.indexOf('resource:') == 0) {
@@ -117,7 +117,7 @@ function installDaemon(tint, service, daemon) {
                 filename = volume.Source.substr('resource:'.length);
                 if (filename.indexOf('/') == 0) filename = filename.substring(1);
 
-                volume.Source = tintFsDir + '/' + filename;
+                volume.Source = appFsDir + '/' + filename;
             }
         });
     }
@@ -128,7 +128,7 @@ function installDaemon(tint, service, daemon) {
 
             nodes.forEach(function(node) {
                 promises.push(node.daemons.create(
-                    tintId,
+                    appId,
                     service.id,
                     daemon.id,
                     daemon.driver,
@@ -156,14 +156,14 @@ function removeAllDaemons() {
     });
 }
 
-function removeTintDaemons(tint) {
-    logger.info('Flagging tint daemons for removal ' + tu.id(tint));
+function removeAppDaemons(app) {
+    logger.info('Flagging app daemons for removal ' + tu.id(app));
 
     return cluster.nodes.all().then(function(nodes) {
         var promises = [];
 
         nodes.forEach(function(node) {
-            promises.push(node.daemons.removeForTint(tu.id(tint)));
+            promises.push(node.daemons.removeForApp(tu.id(app)));
         });
 
         return Q.all(promises);

@@ -5,33 +5,33 @@ var Q = require('q'),
     catalog = require('../store/catalog'),
     health = require('../store/health'),
     log4js = require('log4js'),
-    tu = require('../utils/tint-utils'),
+    tu = require('../utils/app-utils'),
     consulUtils = require('../utils/consul-utils');
 
-var logger = log4js.getLogger('service.cluster.tint');
+var logger = log4js.getLogger('service.cluster.app');
 
 module.exports = {
-    list: listTints,
-    get: getTint,
-    install: installTint,
-    uninstall: uninstallTint
+    list: listApps,
+    get: getApp,
+    install: installApp,
+    uninstall: uninstallApp
 };
 
-function installTint(definition) {
-    // -- todo: make sure a stack tint has not been installed yet
-    return kv.set('tints/' + tu.id(definition), definition, null, consulUtils.flags.CREATE + consulUtils.flags.OPERATION_NEW);
+function installApp(definition) {
+    // -- todo: make sure a stack app has not been installed yet
+    return kv.set('apps/' + tu.id(definition), definition, null, consulUtils.flags.CREATE + consulUtils.flags.OPERATION_NEW);
 }
 
-function uninstallTint(profileId, slug) {
-    return kv.flag('tints/' + profileId + '/' + slug, consulUtils.flags.REMOVE + consulUtils.flags.OPERATION_NEW);
+function uninstallApp(profileId, slug) {
+    return kv.flag('apps/' + profileId + '/' + slug, consulUtils.flags.REMOVE + consulUtils.flags.OPERATION_NEW);
 }
 
-function listTints() {
-    return kv.list('tints').then(function(tintPaths) {
+function listApps() {
+    return kv.list('apps').then(function(appPaths) {
         var promises = [];
 
-        tintPaths.forEach(function(tintPath) {
-            promises.push(_getTintListItem(tintPath));
+        appPaths.forEach(function(appPath) {
+            promises.push(_getAppListItem(appPath));
         });
 
         return Q.all(promises);
@@ -41,31 +41,31 @@ function listTints() {
     });
 }
 
-function getTint(profileId, slug) {
-    return _getExtendedNodeDetail('tints/' + profileId + '/' + slug);
+function getApp(profileId, slug) {
+    return _getExtendedNodeDetail('apps/' + profileId + '/' + slug);
 }
 
-function _getTintListItem(tintPath) {
-    return _getExtendedTintDetail(tintPath).then(function(tint) {
-        return tint;
+function _getAppListItem(appPath) {
+    return _getExtendedAppDetail(appPath).then(function(app) {
+        return app;
     });
 }
 
-function _getExtendedTintDetail(tintPath) {
-    return kv.get.key(tintPath).then(function(tint) {
-        return _getViewInstances(tint).then(function(views) {
-            tint.views = views;
+function _getExtendedAppDetail(appPath) {
+    return kv.get.key(appPath).then(function(app) {
+        return _getViewInstances(app).then(function(views) {
+            app.views = views;
 
-            return tint;
+            return app;
         })
     });
 }
 
-function _getViewInstances(tint) {
+function _getViewInstances(app) {
     var promises = [];
 
-    if (tint.views) {
-        tint.views.forEach(function(view) {
+    if (app.views) {
+        app.views.forEach(function(view) {
             promises.push(services.nodes(view.daemon).then(function(nodes) {
                 var result = {
                     name: view.name,

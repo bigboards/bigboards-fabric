@@ -11,38 +11,37 @@ var resources = {
         events: require('../cluster/cluster-events.resource'),
         setting: require('../cluster/cluster-settings.resource'),
         node: require('../cluster/cluster-node.resource'),
-        tint: require('../cluster/cluster-tint.resource')
+        app: require('../cluster/cluster-apps.resource')
     }
 };
 
 module.exports = function(app, io) {
+    API.register.guarded.get(app, '/v1/apps', scopeMiddleware, resources.cluster.app.list);
+    API.register.guarded.post(app, '/v1/apps', scopeMiddleware, resources.cluster.app.install);
+
+    API.register.guarded.get(app, '/v1/apps/:profileId/:slug', scopeMiddleware, resources.cluster.app.get);
+    API.register.guarded.delete(app, '/v1/apps/:profileId/:slug', scopeMiddleware, resources.cluster.app.uninstall);
+
+    API.register.get(app, '/v1/cluster', scopeMiddleware, resources.cluster.status.get);
+    API.register.post(app, '/v1/cluster', resources.membership.join);
+    API.register.delete(app, '/v1/cluster', resources.membership.leave);
+
+    API.register.guarded.get(app, '/v1/events', scopeMiddleware, resources.cluster.events.list);
+
+    API.register.guarded.get(app, '/v1/nodes', scopeMiddleware, resources.cluster.node.list);
+    API.register.guarded.get(app, '/v1/nodes/:id', scopeMiddleware, resources.cluster.node.get);
+
+    API.register.guarded.get(app, '/v1/services', scopeMiddleware, resources.cluster.service.list);
+
+    API.register.guarded.get(app, '/v1/settings', scopeMiddleware, resources.cluster.setting.get);
+    API.register.guarded.post(app, '/v1/settings', scopeMiddleware, resources.cluster.setting.set);
+
     API.register.get(app, '/v1/status', resources.node.detail);
-
-    API.register.post(app, '/v1/membership', resources.membership.join);
-    API.register.delete(app, '/v1/membership', resources.membership.leave);
-
-    API.register.get(app, '/v1/membership/status', resources.membership.status);
-    API.register.post(app, '/v1/membership/status', resources.membership.start);
-    API.register.delete(app, '/v1/membership/status', resources.membership.stop);
-
-    API.register.guarded.get(app, '/v1/cluster', scopeMiddleware, resources.cluster.status.get);
-
-    API.register.guarded.get(app, '/v1/cluster/services', scopeMiddleware, resources.cluster.service.list);
-
-    API.register.guarded.get(app, '/v1/cluster/events', scopeMiddleware, resources.cluster.events.list);
-
-    API.register.guarded.get(app, '/v1/cluster/settings', scopeMiddleware, resources.cluster.setting.get);
-    API.register.guarded.post(app, '/v1/cluster/settings', scopeMiddleware, resources.cluster.setting.set);
-
-    API.register.guarded.get(app, '/v1/cluster/nodes', scopeMiddleware, resources.cluster.node.list);
-    API.register.guarded.get(app, '/v1/cluster/nodes/:id', scopeMiddleware, resources.cluster.node.get);
+    API.register.post(app, '/v1/status', resources.membership.start);
+    API.register.delete(app, '/v1/status', resources.membership.stop);
 
     // todo: this returns invalid content
-    API.register.guarded.get(app, '/v1/cluster/tints', scopeMiddleware, resources.cluster.tint.list);
 
-    API.register.guarded.post(app, '/v1/cluster/tints', scopeMiddleware, resources.cluster.tint.install);
-    API.register.guarded.get(app, '/v1/cluster/tints/:profileId/:slug', scopeMiddleware, resources.cluster.tint.get);
-    API.register.guarded.delete(app, '/v1/cluster/tints/:profileId/:slug', scopeMiddleware, resources.cluster.tint.uninstall);
 
     startIO(io);
 

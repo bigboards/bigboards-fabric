@@ -19,18 +19,18 @@ function RemoteResource(nodeId) {
     this.logger.debug("created ScopedStorage nodes/" + nodeId);
 }
 
-RemoteResource.prototype.create = function(tintId, resourceId, resourceType, resourceFsPath, resourceScope) {
+RemoteResource.prototype.create = function(appId, resourceId, resourceType, resourceFsPath, resourceScope) {
     var me = this;
     var definition = {
         id: resourceId,
         type: resourceType,
-        tint: tintId,
-        consulPath: 'tints/' + tintId + '/resources/' + resourceId,
+        app: appId,
+        consulPath: 'apps/' + appId + '/resources/' + resourceId,
         fsPath: resourceFsPath,
         scope: resourceScope
     };
 
-    return this.storage.create(tintId + '/' + resourceId, definition)
+    return this.storage.create(appId + '/' + resourceId, definition)
         .then(function() {
             logger.debug('Created resource ' + resourceId + ' on node ' + me.nodeId + '.');
         }, function(error) {
@@ -39,10 +39,10 @@ RemoteResource.prototype.create = function(tintId, resourceId, resourceType, res
         });
 };
 
-RemoteResource.prototype.removeForTint = function(tintId) {
+RemoteResource.prototype.removeForApp = function(appId) {
     var me = this;
 
-    return me.storage.childKeys(tintId)
+    return me.storage.childKeys(appId)
         .then(function(resourceKeys) {
             var promises = [];
 
@@ -53,21 +53,21 @@ RemoteResource.prototype.removeForTint = function(tintId) {
             return Q.all(promises);
         })
         .then(function() {
-            // -- remove the key tint key from the node
-            return me.storage.removeSync(tintId);
+            // -- remove the key app key from the node
+            return me.storage.removeSync(appId);
         });
 };
 
 RemoteResource.prototype.removeAll = function() {
     var me = this;
 
-    return me.storage.childKeys().then(function(nodeTintKeys) {
+    return me.storage.childKeys().then(function(nodeAppKeys) {
         var promises = [];
 
-        nodeTintKeys.forEach(function(nodeTintKey) {
-            var tintId = nodeTintKey.substring(nodeTintKey.lastIndexOf('/'));
+        nodeAppKeys.forEach(function(nodeAppKey) {
+            var appId = nodeAppKey.substring(nodeAppKey.lastIndexOf('/'));
 
-            promises.push(me.removeForTint(tintId));
+            promises.push(me.removeForApp(appId));
         });
 
         return Q.all(promises);

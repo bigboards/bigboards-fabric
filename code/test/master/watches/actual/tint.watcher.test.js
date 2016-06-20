@@ -5,14 +5,14 @@ var Q = require('q');
 
 describe('master', function() {
     describe('watches', function() {
-        describe('tint', function() {
+        describe('app', function() {
             this.timeout(600000);
 
             var logger = log4js.getLogger();
-            var tintWatcher = require('../../../../master/watches/actual/tint.watcher');
+            var appWatcher = require('../../../../master/watches/actual/app.watcher');
 
-            it ('should react on the creation of the tint in consul', function() {
-                tintWatcher.start();
+            it ('should react on the creation of the app in consul', function() {
+                appWatcher.start();
 
                 var hasBeenCreated = false;
 

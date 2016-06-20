@@ -15,10 +15,10 @@ module.exports = {
 function getStatus() {
     logger.debug('Fetching the cluster status');
 
-    return Q.all([_getNodeStatus(), _getTintStatus()]).then(function(results) {
+    return Q.all([_getNodeStatus(), _getAppStatus()]).then(function(results) {
         return {
             cluster: settings.get('cluster_name'),
-            tints: results[1],
+            apps: results[1],
             nodes: results[0].nodes,
             containers: results[0].containers
         }
@@ -71,14 +71,14 @@ function _getNodeStatus() {
     });
 }
 
-function _getTintStatus() {
-    return kv.get.prefix('tints').then(function(tints) {
+function _getAppStatus() {
+    return kv.get.prefix('apps').then(function(apps) {
         var result = {};
 
-        if (tints) {
-            tints.forEach(function (tint) {
-                var key = tint.Key.substring('tints/'.length);
-                result[key] = tint.Flags;
+        if (apps) {
+            apps.forEach(function (app) {
+                var key = app.Key.substring('apps/'.length);
+                result[key] = app.Flags;
             });
         }
 

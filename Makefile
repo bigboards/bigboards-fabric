@@ -1,8 +1,10 @@
 VERSION ?= 2.0
 ARCH = $(shell uname -m)
 PROJECT = bigboards-fabric
+BRANCH = "$BUILDKITE_BRANCH"
+AWS_PROFILE = personal
 
-all: dependencies package-deb
+all: clean dependencies package-deb
 
 clean:
 	rm -rf code/node_modules
@@ -29,3 +31,8 @@ package-deb:
 	echo 2.0 > /tmp/$(PROJECT)/debian-binary
 	cd /tmp/$(PROJECT); ar r ../$(PROJECT)-$(VERSION)-$(ARCH).deb debian-binary control.tar.gz data.tar.gz
 	cp /tmp/$(PROJECT)-$(VERSION)-$(ARCH).deb .
+
+deploy-deb:
+	deb-s3 upload -p -b apt.bigboards.io -a armv7l -c $BRANCH $(PROJECT)-$(VERSION)-$(ARCH).deb
+	deb-s3 upload -p -b apt.bigboards.io -a armhf -c $BRANCH $(PROJECT)-$(VERSION)-$(ARCH).deb
+	deb-s3 upload -p -b apt.bigboards.io -a amd64 -c $BRANCH $(PROJECT)-$(VERSION)-$(ARCH).deb

@@ -18,6 +18,6 @@ module.exports.stripLast = function(str) {
     return str.substring(0, str.length - 2);
 };
 
-module.exports.toTintGUID = function(owner, slug) {
+module.exports.toAppGUID = function(owner, slug) {
     return owner + '/' + slug;
 };
