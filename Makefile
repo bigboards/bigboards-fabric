@@ -8,7 +8,6 @@ all: clean dependencies package-deb
 
 clean:
 	rm -rf code/node_modules
-	rm -rf code/local
 	rm -rf code/ui/bower_components
 
 dependencies:
