@@ -68,6 +68,7 @@ function getValue(key) {
         if (err) return defer.reject(err);
         if (! data) return defer.resolve({});
 
+        logger.debug(data.Value);
         return defer.resolve(JSON.parse(data.Value));
     });
 
@@ -239,6 +240,8 @@ function removeByPrefix(prefix) {
 
 function listChildren(prefix) {
     var defer = Q.defer();
+
+    if (prefix.lastIndexOf("/") != prefix.length -1) prefix = prefix + '/';
 
     consul.kv.keys({key: prefix, separator: '/'}, function(err, data) {
         return (err) ? defer.reject(err) : defer.resolve(data);

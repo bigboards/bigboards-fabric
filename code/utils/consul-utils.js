@@ -19,7 +19,9 @@ module.exports = {
     kvToFs: kvToFs,
     parseFlag: parseFlag,
     flagToName: flagToName,
-    flags: flags
+    flags: flags,
+    isFile: isFile,
+    isDirectory: isDirectory
 };
 
 function kvToFs(pathInConsul, fsPath, variables) {
@@ -80,3 +82,10 @@ function flagToName(flag) {
     }
 }
 
+function isDirectory(key) {
+    return (key.lastIndexOf('/') == key.length -1);
+}
+
+function isFile(key) {
+    return (key.lastIndexOf('/') != key.length -1);
+}

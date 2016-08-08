@@ -1,7 +1,7 @@
 var fsu = require('./fs-utils');
 
 module.exports.id = function(app) {
-    return app.profile.id + '/' + app.slug;
+    return app.profile.id + '-' + app.slug;
     //return app.owner + '$' + app.slug;
 };
 

@@ -23,14 +23,16 @@ function installApp(definition) {
 }
 
 function uninstallApp(profileId, slug) {
-    return kv.flag('apps/' + profileId + '/' + slug, consulUtils.flags.REMOVE + consulUtils.flags.OPERATION_NEW);
+    return kv.flag('apps/' + profileId + '-' + slug, consulUtils.flags.REMOVE + consulUtils.flags.OPERATION_NEW);
 }
 
 function listApps() {
-    return kv.list('apps').then(function(appPaths) {
+    return kv.children('apps/').then(function(appPaths) {
         var promises = [];
 
         appPaths.forEach(function(appPath) {
+            if (consulUtils.isDirectory(appPath)) return;
+
             promises.push(_getAppListItem(appPath));
         });
 
@@ -42,7 +44,7 @@ function listApps() {
 }
 
 function getApp(profileId, slug) {
-    return _getExtendedNodeDetail('apps/' + profileId + '/' + slug);
+    return _getExtendedNodeDetail('apps/' + profileId + '-' + slug);
 }
 
 function _getAppListItem(appPath) {
