@@ -28,17 +28,17 @@
             aria-label="Show Settings">
     <div layout="row" layout-align="start center">
         <h3 class="m-l-16 md-display-1" flex>Settings</h3>
-        <md-button ng-click="ac.toggleList()" class="md-primary md-icon-button m-r-16">
+        <md-button ng-click="ac.toggleList()" class="md-primary md-icon-button m-r-16" aria-label="Toggle Settings">
             <md-icon md-font-icon="lnr-cross2" class="lnr"></md-icon>
         </md-button>
     </div>
 
-    <md-content layout="column" layout-padding ng-include="'app/core/settings.part.html'" ng-controller="SettingsController as sc"></md-content>
+    <md-content layout="column" layout-padding ng-include="'app/core/settings/settings.part.html'" ng-controller="SettingsController as sc"></md-content>
 </md-sidenav>
 
 
 <div flex layout="column" tabIndex="-1" role="main">
-    <md-toolbar layout="row" class="transparent" ng-if="!ac.isMinimal">
+    <md-toolbar layout="row" class="transparent" ng-if="!ac.isMinimal && ac.page.navigation()">
         <h3 class="m-l-16 md-display-1" flex>{{ ac.page.title() }}</h3>
 
         <md-button aria-label="Navigate to the main page" ng-click="ac.goto('/')">
@@ -72,18 +72,24 @@
 <script src="app/mmc.settings.js"></script>
 <script src="app/mmc.run.js"></script>
 
-<script src="app/core/application.controller.js"></script>
-<script src="app/core/settings.controller.js"></script>
-<script src="app/core/dashboard.controller.js"></script>
-<script src="app/core/bootstrap.controller.js"></script>
-<script src="app/core/node.service.js"></script>
+<script src="app/core/application/application.service.js"></script>
+<script src="app/core/application/application.controller.js"></script>
+
+<script src="app/core/bootstrap/bootstrap.controller.js"></script>
+
+<script src="app/core/dashboard/dashboard.controller.js"></script>
+
+<script src="app/core/node/node.service.js"></script>
+<script src="app/core/cluster/nodes/cluster-node.service.js"></script>
+
+<script src="app/core/settings/settings.controller.js"></script>
+<script src="app/core/settings/settings.service.js"></script>
+
 <script src="app/core/tint.service.js"></script>
 <script src="app/core/status.service.js"></script>
-<script src="app/core/settings.service.js"></script>
 <script src="app/core/service.service.js"></script>
 <script src="app/core/event.service.js"></script>
 <script src="app/core/link.service.js"></script>
-<script src="app/core/page.service.js"></script>
 <script src="app/core/bytes.filter.js"></script>
 <script src="app/core/service.directive.js"></script>
 <script src="app/core/view.directive.js"></script>
@@ -110,24 +116,10 @@
     (function() {
         var mmc = angular.module("mmc");
 
-        fetchData().then(bootstrapApplication);
+        angular.element(document).ready(function() {
+            angular.bootstrap(document, ["mmc"]);
+        });
 
-        function fetchData() {
-            var initInjector = angular.injector(["ng"]);
-            var $http = initInjector.get("$http");
-
-            return $http.get("/v1/status").then(function(response) {
-                mmc.constant("nodeInfo", response.data);
-            }, function(errorResponse) {
-                // Handle error case
-            });
-        }
-
-        function bootstrapApplication() {
-            angular.element(document).ready(function() {
-                angular.bootstrap(document, ["mmc"]);
-            });
-        }
     }());
 </script>
 

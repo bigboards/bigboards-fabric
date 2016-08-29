@@ -1,0 +1,14 @@
+[% for group in tint.stack.groups %]
+- hosts: [[ group.runs_on ]]
+  sudo: yes
+  roles: [% for role in group.containers %]
+    - { role: [[ role ]], mode: 'install' }
+[% endfor %]
+
+[% endfor %]
+
+- hosts: all:!localhost
+  sudo: yes
+  tasks:
+    - name: make sure all changes are synced to disk
+      shell: sync && sync

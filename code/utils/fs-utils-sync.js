@@ -3,8 +3,10 @@ var Q = require('q'),
     yaml = require("js-yaml"),
     ini = require('ini'),
     swig = require('swig'),
-    log = require('winston'),
     mkdirp = require('mkdirp');
+
+var log4js = require('log4js');
+var logger = log4js.getLogger('utils.fs');
 
 var renderer = new swig.Swig({
     varControls: ['[[', ']]'],
@@ -118,18 +120,19 @@ module.exports.generateDir = generateDir;
 module.exports.generateFile = generateFile;
 
 function generateFile(templatePath, targetPath, variables) {
-    log.log('info', 'Generating ' + templatePath + ' to ' + targetPath);
+    logger.info('Generating ' + templatePath + ' to ' + targetPath);
     var content = renderer.renderFile(templatePath, variables);
 
     if (!content || content == "") {
-        log.log('warn', 'No content to be written!')
+        logger.warn('No content to be written!');
+        writeFile(targetPath, "");
     } else {
         writeFile(targetPath, content);
     }
 }
 
 function generateDir(pathContainingTemplates, targetPath, variables) {
-    log.log('info', 'Generating directory ' + pathContainingTemplates + ' to ' + targetPath);
+    logger.info('Generating directory ' + pathContainingTemplates + ' to ' + targetPath);
 
     var dirContents = readDir(pathContainingTemplates);
     dirContents.forEach(function(child) {

@@ -99,6 +99,6 @@ function handleServiceCall(req, res, promise) {
     });
 }
 
-function handleMissingParameter(req, res, parameter) {
-    res.status(400).json({message: 'Missing parameter ' + parameter, detail: 'The ' + parameter + ' parameter could not be found on the request'});
+function handleMissingParameter(req, res, parameter, parameterLocation) {
+    res.status(400).json({message: 'Missing parameter ' + parameter, detail: 'The ' + parameter + ' parameter could not be found on the request ' + parameterLocation});
 }

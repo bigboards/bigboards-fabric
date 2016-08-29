@@ -4,11 +4,9 @@ var settings = require('../settings');
 var Errors = require('../errors');
 var consul = require('consul')();
 var Q = require('q');
-var Watcher = require('../cluster/storage/watcher');
 var system = require('../local/system');
 
 var localNode = require('../local');
-var appWatcher = new Watcher('apps', /^apps\/[a-zA-Z0-9\-\_]+\/[a-zA-Z0-9\-\_]+$/m, require('../master/app.reactor'));
 
 var store = {
     kv: require('../store/kv'),
@@ -109,8 +107,10 @@ function raceForLeader(localIp, localPort, sessionId) {
 
 function connected(leader, localIp, localPort) {
     if (leader) {
-        appWatcher.start();
+        logger.trace("connected as leader");
+
     } else {
+        logger.trace("connected as slave");
         var watch = consul.watch({ method: consul.kv.get, options: { key: 'leader', recurse: recurse }});
         watch.on('change', function(data, res) {
             if (! data) return;
@@ -130,8 +130,7 @@ function connected(leader, localIp, localPort) {
 }
 
 function disconnected() {
-    logger.debug('Stop watching for apps');
-    appWatcher.stop();
+    logger.trace("disconnected");
 }
 
 

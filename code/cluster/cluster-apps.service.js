@@ -1,12 +1,12 @@
 var Q = require('q'),
     kv = require('../store/kv'),
-    Storage = require('../cluster/storage'),
     services = require('../store/services'),
     catalog = require('../store/catalog'),
     health = require('../store/health'),
     log4js = require('log4js'),
-    tu = require('../utils/app-utils'),
-    consulUtils = require('../utils/consul-utils');
+    consulUtils = require('../utils/consul-utils'),
+    tasks = require('../tasks'),
+    errors = require("../errors");
 
 var logger = log4js.getLogger('service.cluster.app');
 
@@ -17,13 +17,25 @@ module.exports = {
     uninstall: uninstallApp
 };
 
-function installApp(definition) {
-    // -- todo: make sure a stack app has not been installed yet
-    return kv.set('apps/' + tu.id(definition), definition, null, consulUtils.flags.CREATE + consulUtils.flags.OPERATION_NEW);
+function installApp(app, verbose) {
+    // -- todo: validate the app structure
+    logger.trace("installing " + app.id);
+
+    return tasks.invoke('app_install', {
+        app: app,
+        verbose: verbose
+    });
 }
 
-function uninstallApp(profileId, slug) {
-    return kv.flag('apps/' + profileId + '-' + slug, consulUtils.flags.REMOVE + consulUtils.flags.OPERATION_NEW);
+function uninstallApp(appId, verbose) {
+    if (! appId) throw new errors.MissingArgumentError("appId");
+
+    logger.trace("uninstalling " + appId);
+
+    return tasks.invoke('app_uninstall', {
+        appId: appId,
+        verbose: verbose
+    });
 }
 
 function listApps() {
@@ -43,14 +55,14 @@ function listApps() {
     });
 }
 
-function getApp(profileId, slug) {
-    return _getExtendedNodeDetail('apps/' + profileId + '-' + slug);
+function getApp(appId) {
+    if (! appId) throw new errors.MissingArgumentError("appId");
+
+    return _getExtendedAppDetail('apps/' + appId);
 }
 
 function _getAppListItem(appPath) {
-    return _getExtendedAppDetail(appPath).then(function(app) {
-        return app;
-    });
+    return _getExtendedAppDetail(appPath);
 }
 
 function _getExtendedAppDetail(appPath) {

@@ -7,6 +7,7 @@ var consul = require('consul')();
 
 module.exports = {
     generate: generateValue,
+    exists: exists,
     get: {
         key: getValue,
         prefix: getValuesByPrefix
@@ -28,6 +29,17 @@ module.exports = {
         get: getRawValue
     }
 };
+
+function exists(key) {
+    var defer = Q.defer();
+
+    consul.kv.get(key, function(err, data) {
+        if (err) return defer.resolve(false);
+        if (! data) return defer.resolve(true);
+    });
+
+    return defer.promise;
+}
 
 function generateValue(consulPath, fsPath, variables, prefix) {
     var defer = Q.defer();

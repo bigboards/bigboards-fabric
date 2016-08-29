@@ -1,16 +1,16 @@
 angular.module('mmc.node').controller('NodeListController', NodeListController);
 
-NodeListController.$inject = ['Page', 'NodeService', '$location'];
+NodeListController.$inject = ['Application', 'ClusterNodeService', '$location'];
 
-function NodeListController(Page, NodeService, $location) {
+function NodeListController(Application, ClusterNodeService, $location) {
     var vm = this;
 
     vm.nodes = [];
     vm.goto = goto;
 
-    Page.setTitle('Nodes');
+    Application.page.title('Nodes');
 
-    NodeService.list().then(function(nodes) {
+    ClusterNodeService.list().then(function(nodes) {
         vm.nodes = nodes;
     });
 

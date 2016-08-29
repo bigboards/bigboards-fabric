@@ -11,6 +11,7 @@ module.exports = {
     set: setProperty,
     has: hasProperty,
     get: getProperty,
+    path: getPath,
     remove: removeProperty
 };
 
@@ -24,6 +25,12 @@ function hasProperty(key) {
     var value = settings[key];
 
     return (!! value);
+}
+
+function getPath(key, defaultValue) {
+    var value = settings[key];
+
+    return fs.parentFileName(process.env.BB_FABRIC_CONFIG_FILE) + '/' + ((value) ? value : defaultValue)
 }
 
 function getProperty(key, defaultValue) {

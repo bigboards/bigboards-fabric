@@ -7,6 +7,8 @@ timeout.create: 10000
 timeout.update: 10000
 timeout.remove: 10000
 
+nomad_config_file: nomad.hcl
+
 cluster_key: ziN1OXB20wQTarp7tiqT2Q==
 cluster_name: test-cluster
 cluster_nodes:

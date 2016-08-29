@@ -1,5 +1,4 @@
 var Q = require('q'),
-    Watcher = require('../cluster/storage/watcher'),
     Introspecter = require('../introspecter'),
     system = require('./system'),
     settings = require('../settings'),
@@ -7,14 +6,8 @@ var Q = require('q'),
     kv = require('../store/kv'),
     log4js = require('log4js'),
     su = require('../utils/sys-utils'),
-    consulUtils = require('../utils/consul-utils'),
     ConsulDaemon = require('../daemons/consul'),
-    ScopedStorage = require('../cluster/storage');
-
-var localWatchers = {
-    resource: new Watcher('nodes/' + system.id + '/resources', null, require('./resource.reactor')),
-    daemon: new Watcher('nodes/' + system.id + '/daemons', null, require('./daemon.reactor'))
-};
+    NomadDaemon = require('../daemons/nomad');
 
 var logger = log4js.getLogger('node.' + system.id);
 var tickerLog = log4js.getLogger('ticker.' + system.id);
@@ -22,7 +15,7 @@ var tickerLog = log4js.getLogger('ticker.' + system.id);
 var fabricSessionId = null;
 var ticker = null;
 var consulDaemon = new ConsulDaemon();
-var storage = new ScopedStorage();
+var nomadDaemon = new NomadDaemon();
 
 module.exports = {
     isRunning: isRunning,
@@ -47,7 +40,7 @@ function start() {
         '-advertise=' + ip,
         '-bootstrap-expect=' + settings.get('cluster_servers'),
         '-dc=' + settings.get('cluster_name'),
-        '-data-dir=' + settings.get('data_dir'),
+        '-data-dir=' + settings.get('data_dir') + '/consul',
         '-domain=' + settings.get('cluster_name') + '.',
         '-encrypt=' + settings.get('cluster_key'),
         '-ui'
@@ -79,11 +72,7 @@ function start() {
             });
         })
         .then(function() {
-            localWatchers.daemon.start();
-            localWatchers.resource.start();
-        })
-        .then(function() {
-            logger.debug('Start ticking');
+            logger.trace('Start ticking');
             ticker = setInterval(function() {
                 session.renew(fabricSessionId).then(function() {
                     tickerLog.trace("Renewed the fabric session");
@@ -93,35 +82,30 @@ function start() {
             }, 15 * 1000)
         })
         .then(function() {
-            // -- start the daemons that need to be started
-            return kv.children('nodes/' + system.id + '/daemons/').then(function(tintOwners) {
-                var promises = [];
-
-                tintOwners.forEach(function(ownerKey) {
-                    promises.push(kv.children(ownerKey).then(function(tintKeys) {
-                        var promises = [];
-
-                        tintKeys.forEach(function(tintKey) {
-                            promises.push(kv.children(tintKey).then(function(daemonKeys) {
-                                var promises = [];
-
-                                daemonKeys.forEach(function(daemonKey) {
-                                    promises.push(storage.signal(daemonKey, consulUtils.flags.START));
-                                });
-
-                                return Q.all(promises);
-                            }));
-                        });
-
-                        return Q.all(promises);
-                    }));
-                });
-
-                return Q.all(promises);
-            })
+            logger.info("Node up and running!");
         })
         .then(function() {
-            logger.info("Node up and running!");
+            logger.info("Starting Nomad");
+
+            var nomad_args = [
+                'agent',
+                '-node=' + id,
+                // '-bind=' + ip,
+                '-bootstrap-expect=' + settings.get('cluster_servers'),
+                '-config=' + settings.path('nomad_config_file'),
+                '-dc=' + settings.get('cluster_name'),
+                '-client',
+                '-network-speed=100',
+                '-data-dir=' + settings.get('data_dir') + "/nomad"
+            ];
+
+            settings.get('cluster_nodes', []).forEach(function(other_node) {
+                nomad_args.push('-retry-join=' + other_node);
+            });
+
+            if (settings.get('cluster_role', 'client') == 'server') nomad_args.push('-server');
+
+            return nomadDaemon.start(nomad_args)
         })
         .fail(function(error) {
             logger.error('Fabric session creation failed!');
@@ -136,10 +120,6 @@ function isRunning() {
 function stop() {
     if (! settings.has('cluster_key'))
         return Q.reject('This node has not been linked to a cluster yet');
-
-    // -- stop the watchers
-    localWatchers.daemon.stop();
-    localWatchers.resource.stop();
 
     if (ticker) clearInterval(ticker);
 

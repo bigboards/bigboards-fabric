@@ -1,3 +1,11 @@
+function MissingArgumentError(argument) {
+    this.name = "MissingArgumentError";
+    this.message = "The '" + argument + "' argument was expected but has not been set.";
+    this.stack = Error().stack;
+}
+MissingArgumentError.prototype = Object.create(Error.prototype);
+module.exports.MissingArgumentError = MissingArgumentError;
+
 function NotFoundError(message) {
     this.name = "NotFoundError";
     this.message = message;

@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+[% if is defined role.scripts.on_first_start %]
+if [ ! -e "/initialized.marker" ]; then
+    [[ role.scripts.on_first_start ]]
+
+    touch /initialized.marker
+fi
+[% endif %]
+
+[[ role.scripts.on_start ]]

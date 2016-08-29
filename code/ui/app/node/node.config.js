@@ -14,9 +14,9 @@ function config($routeProvider) {
             controller: 'NodeDetailController',
             controllerAs: 'vm',
             resolve: {
-                node: ['NodeService', '$route', function(NodeService, $route) {
+                node: ['ClusterNodeService', '$route', function(ClusterNodeService, $route) {
                     var nodeId = $route.current.params.id;
-                    return NodeService.detail(nodeId);
+                    return ClusterNodeService.detail(nodeId);
                 }]
             }
         });

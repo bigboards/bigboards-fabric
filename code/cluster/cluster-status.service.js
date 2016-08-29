@@ -27,6 +27,8 @@ function getStatus() {
 
 function _getNodeStatus() {
     logger.debug('Reading the status of the nodes ');
+    if (! settings.get("cluster_key")) return Q({nodes: {}, daemons: {}});
+
 
     return kv.get.prefix('nodes').then(function(values) {
         var nodeRegex = new RegExp('nodes\/(.*)');
@@ -37,8 +39,6 @@ function _getNodeStatus() {
         };
 
         values.forEach(function(value) {
-
-
             var regex = (! daemonRegex.test(value.Key)) ? nodeRegex : daemonRegex;
             var parts = regex.exec(value.Key);
             var node = parts[1];
@@ -72,6 +72,8 @@ function _getNodeStatus() {
 }
 
 function _getAppStatus() {
+    if (! settings.get('cluster_key')) return Q();
+
     return kv.get.prefix('apps').then(function(apps) {
         var result = {};
 

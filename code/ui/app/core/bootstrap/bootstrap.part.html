@@ -1,0 +1,39 @@
+<md-content layout="row" style="min-height: 100%;" layout-align="center center" layout-padding flex>
+    <div class="md-whiteframe-z1" style="max-width: 40%;" layout-padding>
+        <h1 class="md-display-3">Hi There!</h1>
+        <p class="md-body-1">
+            Glad you could make it to the party. Unfortunately, this device has not been linked to a cluster yet. In
+            order to make it work, you can do one of two things:
+        </p>
+
+        <ul style="margin-left: 30px;">
+            <li><p class="md-body-1">
+                Go to the central platform and register this device with a cluster
+            </p></li>
+            <li>
+                <p class="md-body-1">
+                    Call the api on this host with the following body:
+                </p>
+                <pre>
+{
+    "name": "the name of your cluster",
+    "key": "the cluster key",
+    "role": "'server' or 'client'",
+    "servers": 2,
+    "nodes": [
+        "address of another node",
+        "address of another node",
+        ...
+    ]
+}
+                </pre>
+            </li>
+        </ul>
+
+
+
+    </div>
+</md-content>
+
+
+
