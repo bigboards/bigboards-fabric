@@ -46,8 +46,10 @@ function getUniqueId(nic) {
     for (var idx in nics[nic]) {
         if (! nics[nic].hasOwnProperty(idx)) continue;
 
-        if (nics[nic][idx]['family'] == 'IPv4')
+        if (nics[nic][idx]['family'] == 'IPv4') {
+            console.log(nics[nic]);
             return nics[nic][idx].mac.replace(/\:/g, '').toLowerCase();
+        }
     }
 
     return null;

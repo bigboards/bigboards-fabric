@@ -5,12 +5,14 @@ var express = require('express'),
     path = require('path'),
     cors = require('cors');
 
+var local = require('./local');
+
 var log4js = require('log4js');
 var logger = log4js.getLogger('node');
 
 var settings = require('./settings');
 
-var membershipService = require('./membership/membership.service');
+// var membershipService = require('./membership/membership.service');
 
 start();
 
@@ -39,13 +41,7 @@ function start() {
 
     require('./api')(app, io);
 
-    // -- start the node if it has been configured
-    membershipService.status().then(function(status) {
-        if (status.joined) {
-            logger.info("The node is already a member of the cluster. We can proceed with starting the cluster link");
-            membershipService.start();
-        }
-
+    local.run().then(function() {
         app.listen(app.get('port'), function() {
             logger.info('Node API up and running on port ' + app.get('port'));
         });

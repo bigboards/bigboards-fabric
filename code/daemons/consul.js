@@ -112,6 +112,8 @@ Consul.prototype.start = function(args) {
                         args: (sudo) ? [command].concat(args) : args
                     };
 
+                    logger.info("Starting consul with " + cli.args);
+
                     try {
                         me.child = spawn(cli.cmd, cli.args);
 

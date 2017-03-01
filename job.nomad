@@ -21,7 +21,7 @@ job "elasticsearch" {
             driver = "docker"
             config {
                 image = "elasticsearch:2.3"
-                port_map: {
+                port_map = {
                     rest = 9200
                     native = 9300
                 }

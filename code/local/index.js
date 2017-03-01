@@ -1,132 +1,113 @@
 var Q = require('q'),
-    Introspecter = require('../introspecter'),
-    system = require('./system'),
-    settings = require('../settings'),
-    session = require('../store/session'),
-    kv = require('../store/kv'),
-    log4js = require('log4js'),
-    su = require('../utils/sys-utils'),
-    ConsulDaemon = require('../daemons/consul'),
-    NomadDaemon = require('../daemons/nomad');
+    ConsulSession = require('../store/session'),
+    ConsulAgent = require('../store/agent'),
+    ConsulKv = require('../store/kv'),
+    ps = require('ps-node'),
+    log4js = require('log4js');
 
-var logger = log4js.getLogger('node.' + system.id);
-var tickerLog = log4js.getLogger('ticker.' + system.id);
+var logger = log4js.getLogger('local');
+var tickerLog = log4js.getLogger('ticker');
 
 var fabricSessionId = null;
 var ticker = null;
-var consulDaemon = new ConsulDaemon();
-var nomadDaemon = new NomadDaemon();
 
 module.exports = {
-    isRunning: isRunning,
-    start: start,
-    stop: stop
+    run: run
 };
 
-function start() {
-    if (! settings.has('cluster_key'))
-        return Q.reject('This node has not been linked to a cluster yet');
+function run() {
+    return ConsulAgent.identity()
+        .then(function(identity) {
+            return ConsulSession.create("bigboards-fabric", "delete")
+                .then(function(sessionId) {
+                    logger.trace('Start ticking');
 
-    var ip = su.ip(settings.get('nic'));
-    if (! ip) return Q.reject('No ip address could be resolved');
+                    ticker = setInterval(function() {
+                        session.renew(fabricSessionId).then(function() {
+                            tickerLog.trace("Renewed the fabric session");
+                        }, function (error) {
+                            tickerLog.warn("Unable to renew the fabric session: " + error);
+                        });
+                    }, 15 * 1000);
 
-    var id = su.id(settings.get('nic'));
-    if (! id) return Q.reject('No node id could be resolved');
-
-    // -- construct the consul arguments
-    var consul_args = [
-        'agent',
-        '-node=' + id,
-        '-advertise=' + ip,
-        '-bootstrap-expect=' + settings.get('cluster_servers'),
-        '-dc=' + settings.get('cluster_name'),
-        '-data-dir=' + settings.get('data_dir') + '/consul',
-        '-domain=' + settings.get('cluster_name') + '.',
-        '-encrypt=' + settings.get('cluster_key'),
-        '-ui'
-    ];
-
-    settings.get('cluster_nodes', []).forEach(function(other_node) {
-        consul_args.push('-retry-join=' + other_node);
-    });
-
-    if (settings.get('cluster_role', 'client') == 'server') consul_args.push('-server');
-
-    // -- start the consul daemon
-    return consulDaemon.start(consul_args)
-        .then(function() {
-            return session.create('Fabric', 'delete');
-        })
-        .then(function(sessionId) {
-            fabricSessionId = sessionId;
-
-            logger.info('created the fabric session with id ' + sessionId);
-
-            return Introspecter();
-        })
-        .then(function(data) {
-            return kv.set('nodes/' + data.deviceId, data, fabricSessionId).then(function() {
-                data.sessionId = fabricSessionId;
-
-                return data;
-            });
-        })
-        .then(function() {
-            logger.trace('Start ticking');
-            ticker = setInterval(function() {
-                session.renew(fabricSessionId).then(function() {
-                    tickerLog.trace("Renewed the fabric session");
-                }, function (error) {
-                    tickerLog.warn("Unable to renew the fabric session: " + error);
+                    logger.info('created the fabric session with id ' + sessionId);
+                }).then(function() {
+                    // -- running through services
+                    logger.info("looking at which services are currently running");
                 });
-            }, 15 * 1000)
-        })
-        .then(function() {
-            logger.info("Node up and running!");
-        })
-        .then(function() {
-            logger.info("Starting Nomad");
-
-            var nomad_args = [
-                'agent',
-                '-node=' + id,
-                // '-bind=' + ip,
-                '-bootstrap-expect=' + settings.get('cluster_servers'),
-                '-config=' + settings.path('nomad_config_file'),
-                '-dc=' + settings.get('cluster_name'),
-                '-client',
-                '-network-speed=100',
-                '-data-dir=' + settings.get('data_dir') + "/nomad"
-            ];
-
-            settings.get('cluster_nodes', []).forEach(function(other_node) {
-                nomad_args.push('-retry-join=' + other_node);
-            });
-
-            if (settings.get('cluster_role', 'client') == 'server') nomad_args.push('-server');
-
-            return nomadDaemon.start(nomad_args)
-        })
-        .fail(function(error) {
+        }).fail(function(error) {
             logger.error('Fabric session creation failed!');
             logger.error(error);
         });
 }
 
-function isRunning() {
-    return consulDaemon.isRunning();
+function jobsForNode(nodeId) {
+    return ConsulKv.get.prefix("/bigboards/apps/").then(function(apps) {
+        var result = [];
+
+        if (apps) {
+            apps.forEach(function(app) {
+                for (var serviceId in app.services) {
+                    if (! app.services.hasOwnProperty(serviceId)) continue;
+
+                    for (var jobId in app.services[serviceId].jobs) {
+                        if (! app.services[serviceId].jobs.hasOwnProperty(jobId)) continue;
+
+                        var job = app.services[serviceId].jobs[jobId];
+                        if (job.nodes[nodeId]) result.push(job);
+                    }
+                }
+            });
+        }
+
+        return result;
+    });
+
 }
 
-function stop() {
-    if (! settings.has('cluster_key'))
-        return Q.reject('This node has not been linked to a cluster yet');
+function sync(nodeId) {
+    return jobsForNode(nodeId)
+        .then(function(jobs) {
+            jobs.forEach(function(job) {
 
-    if (ticker) clearInterval(ticker);
+            });
+        });
+}
 
-    return session.invalidate(sessions.fabric).then(function() {
-        logger.warn("Invalidated the fabric session");
-        return consulDaemon.stop()
-    }, function (error) {
-        logger.error("Unable to invalidate the fabric session: " + error);
-    });
+function syncJob(job) {
+    var shouldBeInstalled = (job.expected == "PRESENT" || job.expected == "STARTED" || job.expected == "STOPPED");
+    var pidIsRunning = _isJobRunning(job);
+
+    if (job.expected == "PRESENT") {
+
+    } else if (job.expected == "ABSENT") {
+
+    } else if (job.expected == "STARTED") {
+
+    } else if (job.expected == "STOPPED") {
+
+    }
+}
+
+function _isJobInstalled(job) {
+
+}
+
+function _isJobRunning(job) {
+    var defer = Q.defer();
+
+    if (job.pid == -1) defer.resolve(false);
+    else {
+        ps.lookup({pid: job.pid}, function(err, psData) {
+            if (err) defer.reject(err);
+
+            if (psData.command.indexOf("singularity/sexec") != -1 && psData.args == job.command) {
+                defer.resolve(true);
+            } else {
+                return false;
+            }
+        });
+    }
+
+    return defer.promise;
 }

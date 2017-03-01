@@ -43,3 +43,26 @@ module.exports.getJson = function(hostname, port, path, headers) {
 
     return defer.promise;
 };
+
+module.exports.download = function(url, destination) {
+    var defer = Q.defer();
+
+    var file = fs.createWriteStream(destination);
+
+    var request = http.get(url, function(response) {
+        response.on('error', function(err) {
+            defer.reject(err);
+        });
+
+        response.on('end', function() {
+            defer.resolve({
+                url: url,
+                destination: destination
+            });
+        });
+
+        response.pipe(file);
+    });
+
+    return defer.promise;
+};

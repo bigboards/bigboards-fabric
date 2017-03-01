@@ -16,7 +16,7 @@ function listNodes() {
         var res = [];
 
         result.forEach(function(item) {
-            res.push({id: item.Node, address: item.Address});
+            res.push(item);
         });
 
         defer.resolve(res);

@@ -5,8 +5,6 @@ var Q = require('q'),
     gift = require('gift'),
     errors = require('../../../errors');
 
-var TaskUtils = require('../../../utils/task-utils');
-
 var log4js = require('log4js'),
     logger = log4js.getLogger('task.app_install');
 

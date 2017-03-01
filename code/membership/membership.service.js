@@ -54,14 +54,10 @@ function leave() {
 }
 
 function start() {
-    return localNode.start().then(function() {
-        return raceForLeader(system.ip, settings.get('port', 7000));
-    });
+    return localNode.start();
 }
 
 function stop() {
-    disconnected();
-
     return localNode.stop();
 }
 
@@ -74,63 +70,4 @@ function status() {
             }
         });
 }
-
-function raceForLeader(localIp, localPort, sessionId) {
-    logger.info('Participating in the cluster');
-
-    // -- try to become the leader
-    var dataForLeader = {
-        address: localIp,
-        port: localPort
-    };
-
-    return store.kv.set('leader', dataForLeader, sessionId)
-        .then(function(success) {
-            if (success) {
-                logger.info('Became the leader!');
-                connected(true, localIp, localPort);
-            } else {
-                store.kv.get.key('leader').then(function(leaderData) {
-                    if (leaderData.address == localIp) {
-                        logger.info('Became the leader!');
-                        connected(true, localIp, localPort);
-                    } else {
-                        logger.info("I'm just another minion");
-                        connected(false, localIp, localPort);
-                    }
-                });
-            }
-        }).fail(function(error) {
-            logger.error(error);
-        });
-}
-
-function connected(leader, localIp, localPort) {
-    if (leader) {
-        logger.trace("connected as leader");
-
-    } else {
-        logger.trace("connected as slave");
-        var watch = consul.watch({ method: consul.kv.get, options: { key: 'leader', recurse: recurse }});
-        watch.on('change', function(data, res) {
-            if (! data) return;
-            data.forEach(function(dataItem) {
-                if (dataItem.Session) return;
-
-                logger.info('The leader has moved out, time to rally');
-                watch.end();
-                logger.debug('Stopped the watch');
-
-                disconnected();
-
-                raceForLeader(localIp, localPort, sessionId);
-            });
-        });
-    }
-}
-
-function disconnected() {
-    logger.trace("disconnected");
-}
-
 

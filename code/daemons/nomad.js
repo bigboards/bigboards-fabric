@@ -2,6 +2,7 @@ var os = require('os'),
     Q = require('q');
 
 var spawn = require('child_process').spawn;
+var execSync = require('child_process').execSync;
 var Log4js = require('log4js');
 
 var sh = require('../utils/sh-utils'),
@@ -67,11 +68,9 @@ Nomad.prototype.status = function() {
 Nomad.prototype.isRunning = function() {
     logger.trace("ISRUNNING");
 
-    return sh.pidof(this.command, {sudo: this.sudo})
-        .then(function(pid) {
-            logger.debug(pid);
-            return (pid && pid != -1);
-        });
+    var output = execSync("ps aux |grep \"[n]omad agent\" | tr -s ' ' ' '  | cut -d ' ' -f2").toString().trim();
+
+    return Q(output.length > 0);
 };
 
 Nomad.prototype.clean = function() {
@@ -92,60 +91,58 @@ Nomad.prototype.start = function(args) {
     var opts = {sudo: this.sudo};
     var me = this;
 
-    return sh.pidof(command, opts)
-        .then(function(pid) {
-            logger.debug("pid: '" +  + pid + "'");
+    var pid = execSync("ps aux |grep \"[n]omad agent\" | tr -s ' ' ' '  | cut -d ' ' -f2").toString().trim();
+    logger.debug("pid: '" +  + pid + "'");
 
-            if (pid && pid != -1) return false;
-            logger.info("nomad not started, starting it now.");
+    if (pid && pid.length > 0 && pid != "-1") return false;
+    logger.info("nomad not started, starting it now.");
 
-            return sh.exists(command, opts)
-                .then(function(exists) {
-                    if (! exists) throw new Errors.DaemonNotInstalledError('nomad');
+    return sh.exists(command, opts)
+        .then(function(exists) {
+            if (! exists) throw new Errors.DaemonNotInstalledError('nomad');
 
-                    var defer = Q.defer();
+            var defer = Q.defer();
 
-                    // -- merge the args if there are any
-                    var cli = {
-                        cmd: (sudo) ? 'sudo' : command,
-                        args: (sudo) ? [command].concat(args) : args
-                    };
+            // -- merge the args if there are any
+            var cli = {
+                cmd: (sudo) ? 'sudo' : command,
+                args: (sudo) ? [command].concat(args) : args
+            };
 
-                    try {
-                        me.child = spawn(cli.cmd, cli.args, {env: {PATH: process.env.PATH + ':' + fs.parentFileName(cli.cmd)}});
+            try {
+                me.child = spawn(cli.cmd, cli.args, {env: {PATH: process.env.PATH + ':' + fs.parentFileName(cli.cmd)}});
 
-                        me.child.stderr.on('data', function (data) {
-                            logger.error(data.toString('utf8'));
-                        });
+                me.child.stderr.on('data', function (data) {
+                    logger.error(data.toString('utf8'));
+                });
 
-                        var found = false;
+                var found = false;
 
-                        me.child.stdout.on('data', function (data) {
-                            if (!found) {
-                                found = true;
+                me.child.stdout.on('data', function (data) {
+                    if (!found) {
+                        found = true;
 
-                                defer.resolve(Q.delay(1000).then(function() {
-                                    logger.warn("nomad has been started");
-                                }));
-                            }
-
-                            logger.info(data.toString('utf8').replace(/^\s+|\s+$/g, ''));
-                        });
-
-                        me.child.on('close', function (code) {
-                            me.child = null;
-                            logger.info('The nomad daemon exited with code ' + code);
-
-                            if (code != 0) defer.reject(new Error('The nomad daemon exited with code ' + code));
-                        });
-
-                    } catch (error) {
-                        logger.error(error);
-                        defer.reject(error);
+                        defer.resolve(Q.delay(1000).then(function() {
+                            logger.warn("nomad has been started");
+                        }));
                     }
 
-                    return defer.promise;
+                    logger.info(data.toString('utf8').replace(/^\s+|\s+$/g, ''));
                 });
+
+                me.child.on('close', function (code) {
+                    me.child = null;
+                    logger.info('The nomad daemon exited with code ' + code);
+
+                    if (code != 0) defer.reject(new Error('The nomad daemon exited with code ' + code));
+                });
+
+            } catch (error) {
+                logger.error(error);
+                defer.reject(error);
+            }
+
+            return defer.promise;
         });
 };
 

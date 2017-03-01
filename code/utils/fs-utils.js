@@ -4,7 +4,9 @@ var Q = require('q'),
     ini = require('ini'),
     swig = require('swig'),
     log4js = require('log4js'),
-    mkdirp = require('mkdirp');
+    mkdirp = require('mkdirp'),
+    child_process = require('child_process'),
+    exec = child_process.execSync;
 
 var log = log4js.getLogger();
 
@@ -233,4 +235,61 @@ function readIniFile(file) {
 
 function writeIniFile(path, obj) {
     writeFile(path, ini.stringify(obj, { whitespace: true }));
+}
+
+module.exports.cp = cp;
+function cp(source, target) {
+    if (! exists(source))
+        return Q.reject(new Error("Source does not exist"));
+
+    return command('cp "' + source + '" "' + target + '" && echo true || echo false').then(function(response) {
+        if (response != "true")
+            throw new Error("Copy Failed");
+
+        return true;
+    });
+}
+
+module.exports.rm = rm;
+function rm(path) {
+    if (! exists(path)) return Q.resolve(true);
+
+    return command('rm -rf "' + path + '" && echo true || echo false').then(function(response) {
+        if (response != "true")
+            throw new Error("Remove Failed");
+
+        return true;
+    });
+}
+
+module.exports.unzip = unzip;
+function unzip(archive, destination) {
+    if (! exists(archive)) return Q.reject(new Error("Archive does not exist"));
+
+    return exists(archive)
+        .then(function(exists) {
+            if (! exists) return false;
+
+            var cmd = [];
+            cmd.push();
+            cmd.push('');
+
+            return command('zcat "' + archive + '" > ' + destination);
+        });
+}
+
+function command(cmd) {
+    var defer = Q.defer();
+    try {
+        log.trace(cmd);
+        var res = exec(cmd);
+
+        if (res) res = res.toString();
+
+        defer.resolve(res);
+    } catch (error) {
+        defer.reject(error);
+    }
+
+    return defer.promise;
 }
